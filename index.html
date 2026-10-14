@@ -1,0 +1,2152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#2B1E14">
+<title>Guardiões da Trilha</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap">
+<style>
+/* Layout: mapa ocupa a tela toda; HUD de madeira flutua por cima, preso às bordas seguras. Visual único (tema do jogo), sem modo claro/escuro. */
+:root {
+  --wood: #4A3420;
+  --wood-hi: #7A5634;
+  --ink: #2B1E14;
+  --parchment: #F4E9CF;
+  --cream: #FFF4DC;
+  --gold: #FFC93C;
+  --heart: #FF5A4A;
+  --grass: #3E6B26;
+  --locked: #B9AE9A;
+  --display: 'Lilita One', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --body: 'Nunito', system-ui, sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--grass); color: var(--cream); font-family: var(--body); overflow: hidden; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+#game { position: fixed; inset: 0; }
+canvas { display: block; width: 100%; height: 100%; }
+.hud-top { position: fixed; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px 0; display: flex; align-items: flex-start; gap: 8px; pointer-events: none; }
+.plaque { display: flex; align-items: center; gap: 10px; background: var(--wood); border: 3px solid var(--ink); border-radius: 10px; box-shadow: inset 0 0 0 2px var(--wood-hi), 0 3px 0 var(--ink); padding: 6px 10px; font-family: var(--display); font-size: 16px; color: var(--cream); pointer-events: auto; font-variant-numeric: tabular-nums; }
+.plaque span { display: flex; align-items: center; gap: 5px; }
+
+.plaque .bump { animation: bump .35s ease-out; }
+@keyframes bump { 0% { transform: scale(1.35); color: var(--gold); } 100% { transform: scale(1); } }
+.spacer { flex: 1; }
+.btn-wood { pointer-events: auto; min-width: 44px; height: 44px; border-radius: 12px; background: var(--wood); border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px var(--wood-hi), 0 3px 0 var(--ink); color: var(--cream); font-family: var(--display); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0 10px; cursor: pointer; }
+.btn-wood:active, .btn-gold:active { transform: translateY(2px); }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.hud-bottom { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 12px calc(env(safe-area-inset-bottom, 0px) + 14px); display: flex; justify-content: center; pointer-events: none; }
+.btn-gold { pointer-events: auto; height: 56px; padding: 0 22px; border-radius: 14px; background: var(--gold); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); color: var(--ink); font-family: var(--display); font-size: 20px; cursor: pointer; }
+.progress { pointer-events: none; background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 8px 14px; font-weight: 900; font-size: 14px; font-variant-numeric: tabular-nums; }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 8px 14px; font-weight: 900; font-size: 14px; line-height: 1.35; text-align: center; pointer-events: none; transition: opacity .25s; }
+
+/* menu de construção (círculo de 4 opções em volta do terreno) */
+.build { position: fixed; width: 0; height: 0; pointer-events: none; }
+.build .ring { position: absolute; left: -62px; top: -48px; width: 124px; height: 96px; border: 3px dashed var(--cream); border-radius: 50%; opacity: .7; }
+.build .label { position: absolute; left: 50%; top: -136px; transform: translateX(-50%); white-space: nowrap; background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; padding: 3px 10px; font-weight: 900; font-size: 12px; }
+.opt { position: absolute; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: var(--cream); border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); padding: 0; pointer-events: auto; cursor: pointer; display: flex; align-items: center; justify-content: center; animation: pop .18s ease-out both; }
+.opt img { max-width: 30px; max-height: 44px; }
+.opt .price { position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); background: var(--gold); color: var(--ink); border: 2px solid var(--ink); border-radius: 9px; padding: 0 7px; font-family: var(--display); font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; }
+.opt.locked { background: var(--locked); }
+.opt.locked img { opacity: .55; }
+.opt.locked .price { background: var(--locked); }
+.build.picking .ring { opacity: 0; }
+.opt.picked { outline: 4px solid var(--gold); outline-offset: 2px; transform: scale(1.12); }
+.build .label { text-align: center; line-height: 1.3; top: auto; bottom: 112px; white-space: normal; width: max-content; max-width: 230px; }
+.build .label span { font-size: 11px; color: #8A5230; }
+.build .label.below { bottom: auto; top: 96px; }
+@keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* menu da torre construída: melhorar e vender */
+.tmenu { position: fixed; width: 228px; margin-left: -114px; display: flex; flex-direction: column; gap: 6px; pointer-events: auto; animation: pop .18s ease-out both; }
+.tcard { background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.tcard b { font-family: var(--display); font-weight: 400; font-size: 18px; line-height: 1.1; }
+.tcard .stars { color: #C98A12; font-size: 14px; letter-spacing: 2px; }
+.tcard .stat { font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.tbtns { display: grid; grid-template-columns: 1.3fr 1fr; gap: 6px; }
+.tbtn { height: 46px; border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); font-family: var(--display); font-size: 15px; line-height: 1.05; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 6px; }
+.tbtn small { font-family: var(--body); font-weight: 900; font-size: 11px; font-variant-numeric: tabular-nums; }
+.tbtn.up { background: var(--gold); }
+.tbtn.up.locked { background: var(--locked); }
+.tbtn.sell { background: #E8A08F; }
+.tbtn.move { background: #CFE7F5; height: 40px; flex-direction: row; gap: 6px; }
+.tbtn:active { transform: translateY(2px); }
+
+.overlay { position: fixed; inset: 0; background: rgba(20, 12, 6, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.panel { background: var(--parchment); color: var(--ink); border: 4px solid var(--ink); border-radius: 18px; box-shadow: 0 6px 0 var(--ink); padding: 22px 22px 20px; max-width: 320px; width: 100%; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+.panel h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 32px; line-height: 1.05; text-wrap: balance; }
+.panel p { margin: 0; font-size: 15px; font-weight: 800; line-height: 1.4; }
+.panel .btn-gold { align-self: center; }
+/* prévia da próxima onda, dica do tutorial */
+.hud-bottom { flex-direction: column; align-items: center; gap: 8px; }
+.preview { pointer-events: none; display: flex; align-items: center; gap: 8px; background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 4px 10px; font-weight: 900; font-size: 13px; font-variant-numeric: tabular-nums; }
+.preview span { display: flex; align-items: center; gap: 2px; }
+.preview img { height: 26px; width: auto; }
+.preview .lbl { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: #6B5236; }
+.btn-gold small { font-family: var(--body); font-weight: 900; font-size: 13px; }
+.pulse { animation: pulse 1.1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+.tipwrap { position: fixed; inset: 0; background: rgba(20, 12, 6, 0.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.tip { background: var(--parchment); color: var(--ink); border: 4px solid var(--ink); border-radius: 18px; box-shadow: 0 6px 0 var(--ink); padding: 16px 18px; max-width: 320px; width: 100%; display: flex; flex-direction: column; gap: 10px; text-align: center; animation: pop .2s ease-out both; }
+.tip small { font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: #6B5236; }
+.tip p { margin: 0; font-weight: 900; font-size: 17px; line-height: 1.35; text-wrap: balance; }
+.tip .row { display: flex; gap: 10px; justify-content: center; }
+.tip .skip { background: none; border: none; color: #6B5236; font-family: var(--body); font-weight: 900; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
+
+/* habilidades especiais */
+.abilities { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); display: flex; flex-direction: row; justify-content: space-between; padding: 0 24px; pointer-events: none; }
+.abilities .ability { pointer-events: auto; }
+/* com as habilidades nos cantos de baixo, o quadro da próxima onda sobe para nunca encostar nelas */
+.hud-bottom .preview { margin-bottom: 30px; }
+.hud-bottom #callWave { max-width: calc(100% - 200px); height: auto; min-height: 56px; padding: 5px 12px; font-size: 18px; line-height: 1.1; white-space: nowrap; }
+.hud-bottom #callWave small { display: block; font-size: 12px; }
+/* medalhão: aro de madeira, anel dourado, arte pintada no centro, fita com o nome */
+.ability { position: relative; width: 68px; height: 68px; border-radius: 50%; padding: 0; cursor: pointer; background: radial-gradient(circle at 50% 38%, #A8744A, #5A3A20 72%); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink), inset 0 2px 0 #C99560; }
+.ability .core { position: absolute; inset: 6px; border-radius: 50%; overflow: hidden; border: 2.5px solid var(--ink); box-shadow: 0 0 0 2px #E8B23A; display: block; }
+.ability.rain .core { background: radial-gradient(circle at 50% 30%, #F07A4E, #9E2E18 78%); }
+.ability.reinf .core { background: radial-gradient(circle at 50% 35%, #8FC0FA, #2C5FB8 78%); }
+.ability .core img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ability .core::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 -6px 10px rgba(0, 0, 0, .35), inset 0 4px 6px rgba(255, 255, 255, .25); pointer-events: none; }
+.ability .cd { position: absolute; inset: 0; background: conic-gradient(rgba(20, 12, 6, 0.72) var(--p, 0%), transparent 0); pointer-events: none; }
+.ability .cdnum { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 24px; line-height: 1; color: var(--cream); -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; }
+.ability .lab { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); white-space: nowrap; background: var(--parchment); color: var(--ink); border: 2px solid var(--ink); border-radius: 7px; box-shadow: 0 2px 0 var(--ink); padding: 0 6px; font: 900 10px/15px var(--body); }
+.ability:active { transform: translateY(2px); }
+.ability.aiming { outline: 4px solid var(--gold); outline-offset: 3px; }
+.ability.locked .core { filter: grayscale(1) brightness(.7); }
+/* parte de baixo translúcida: deixa ver o portão por trás */
+.hud-bottom .preview { background: rgba(244, 233, 207, 0.6); border-color: rgba(43, 30, 20, 0.65); box-shadow: none; transition: opacity .35s; }
+.hud-bottom .btn-gold { background: rgba(255, 201, 60, 0.75); border-color: rgba(43, 30, 20, 0.75); box-shadow: 0 4px 0 rgba(43, 30, 20, 0.6); transition: opacity .35s; }
+/* campanha */
+.camp { position: fixed; inset: 0; display: flex; flex-direction: column; background: radial-gradient(ellipse at 50% 30%, #F7ECD2, #E3CFA2 70%, #C9AE78); color: var(--ink); padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 12px); }
+.camp::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(35deg, rgba(120, 86, 52, .05) 0 2px, transparent 2px 14px); pointer-events: none; }
+.camp-top { position: relative; display: flex; align-items: center; gap: 8px; }
+.camp-top h2 { flex: 1; margin: 0; text-align: center; font-family: var(--display); font-weight: 400; font-size: 30px; color: var(--gold); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); }
+.camp-total { display: flex; align-items: center; gap: 5px; background: var(--wood); border: 3px solid var(--ink); border-radius: 12px; box-shadow: inset 0 0 0 2px var(--wood-hi), 0 3px 0 var(--ink); color: var(--cream); font-family: var(--display); font-size: 16px; padding: 8px 10px; font-variant-numeric: tabular-nums; }
+.camp-total b { font-weight: 400; }
+.camp-hint { position: relative; margin: 8px 0 0; text-align: center; font-weight: 900; font-size: 13px; color: #6B5236; }
+.camp-area { position: relative; flex: 1; margin-bottom: 205px; width: 100%; max-width: 420px; align-self: center; min-height: 0; }
+#campTrail { position: absolute; inset: 0; width: 100%; height: 100%; }
+#campStages { position: absolute; inset: 0; }
+.stage { position: absolute; transform: translate(-50%, -50%); width: 110px; background: none; border: 0; padding: 0; display: flex; flex-direction: column; align-items: center; cursor: pointer; font: inherit; color: inherit; }
+.stage .med { position: relative; width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #A8744A, #5A3A20 72%); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink), inset 0 2px 0 #C99560; display: block; }
+.stage .core { position: absolute; inset: 7px; border-radius: 50%; overflow: hidden; border: 2.5px solid var(--ink); box-shadow: 0 0 0 2.5px #E8B23A; background-size: cover; background-position: center 40%; }
+.stage .lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.stage .lock svg { width: 36px; height: 36px; }
+.stage.locked .core { filter: grayscale(1) brightness(.45); }
+.stage .flag { position: absolute; top: -30px; right: -8px; width: 34px; height: 38px; }
+.stage .rib { margin-top: -12px; position: relative; background: var(--parchment); border: 2.5px solid var(--ink); border-radius: 8px; box-shadow: 0 2px 0 var(--ink); padding: 1px 10px; font-weight: 900; font-size: 14px; }
+.stage .st { display: flex; gap: 2px; margin-top: 4px; }
+.stage .st svg { width: 20px; height: 20px; }
+.stage.sel .med { outline: 4px solid var(--gold); outline-offset: 4px; }
+.stage:active .med { transform: translateY(2px); }
+.camp-sheet { position: absolute; left: 10px; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); max-width: 420px; margin: 0 auto; background: var(--parchment); border: 4px solid var(--ink); border-radius: 18px; box-shadow: 0 6px 0 var(--ink); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; animation: pop .18s ease-out both; }
+.cs-row { display: flex; gap: 12px; align-items: center; }
+.cs-thumb { width: 58px; height: 78px; flex: none; border-radius: 10px; border: 3px solid var(--ink); background-size: cover; background-position: center 40%; }
+.cs-txt { display: flex; flex-direction: column; gap: 3px; }
+.cs-txt b { font-family: var(--display); font-weight: 400; font-size: 22px; line-height: 1; }
+.cs-txt p { margin: 0; font-weight: 800; font-size: 13px; line-height: 1.35; }
+.camp-total.off { visibility: hidden; }
+.stage .rec { margin-top: 5px; background: var(--wood); color: var(--cream); border: 2px solid var(--ink); border-radius: 8px; padding: 0 8px; font-family: var(--display); font-size: 13px; line-height: 18px; }
+.cs-meta { display: flex; gap: 5px; font-weight: 900; font-size: 12px; color: #6B5236; }
+.cs-meta b { color: var(--ink); }
+.cs-btns { display: flex; gap: 8px; }
+.cs-btns .btn-gold { flex: 1.3; height: 50px; font-size: 20px; padding: 0; }
+.cs-btns .btn-plain { flex: 1; height: 50px; font-size: 16px; padding: 0 6px; }
+/* estrelas */
+.stars3 { display: flex; justify-content: center; gap: 6px; }
+.stars3 svg { width: 46px; height: 46px; }
+.stars3 svg.mid { width: 58px; height: 58px; margin-top: -10px; }
+
+/* tela inicial */
+.start { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); background: linear-gradient(180deg, rgba(20, 12, 6, 0.55), rgba(20, 12, 6, 0.25) 45%, rgba(20, 12, 6, 0.7)); text-align: center; }
+.start h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(44px, 13vw, 64px); line-height: 0.95; color: var(--gold); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--ink); text-wrap: balance; }
+.start .sub { margin: 0; font-weight: 900; font-size: 15px; color: var(--cream); text-shadow: 0 2px 0 var(--ink); }
+.heroes { display: flex; align-items: flex-end; justify-content: center; gap: 0; height: 106px; max-width: 100%; }
+.heroes img { height: 100%; width: auto; min-width: 0; object-fit: contain; filter: drop-shadow(0 4px 0 rgba(43, 30, 20, 0.6)); }
+.heroes .mid { height: 80%; }
+.record { display: flex; gap: 10px; }
+.record div { background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 6px 12px; display: flex; flex-direction: column; min-width: 92px; }
+.record small { font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #6B5236; }
+.record b { font-family: var(--display); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+.start .btn-gold { height: 64px; font-size: 26px; padding: 0 44px; }
+.modes { display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 240px; }
+.modes .btn-plain { height: 54px; font-size: 20px; }
+.toggles { display: flex; gap: 10px; justify-content: center; }
+.toggle { height: 44px; padding: 0 14px; border-radius: 12px; background: var(--wood); border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px var(--wood-hi), 0 3px 0 var(--ink); color: var(--cream); font-family: var(--body); font-weight: 900; font-size: 14px; cursor: pointer; }
+.toggle[aria-pressed="false"] { opacity: .65; text-decoration: line-through; }
+.panel .toggles .toggle { background: var(--wood); }
+.panel .row { display: flex; gap: 10px; justify-content: center; }
+.btn-plain { height: 50px; padding: 0 18px; border-radius: 14px; background: var(--cream); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); color: var(--ink); font-family: var(--display); font-size: 18px; cursor: pointer; }
+.newbest { font-family: var(--display); color: #B07408; font-size: 18px; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } .opt, .plaque .bump, .pulse { animation: none; } }
+</style>
+</head>
+<body>
+
+
+<div id="game"><canvas id="cv" aria-label="Mapa do jogo com a trilha, terrenos de construção, torres e inimigos"></canvas></div>
+
+<div class="hud-top">
+  <div class="plaque" role="status" aria-live="polite">
+    <span><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="#FF5A4A" stroke="#2B1E14" stroke-width="2"/></svg><b id="lives">20</b></span>
+    <span><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#FFD95A" stroke="#2B1E14" stroke-width="2"/><path d="M12 7 V17" stroke="#C98A12" stroke-width="2.5" stroke-linecap="round"/></svg><b id="coins">200</b></span>
+    <span title="Onda"><span style="display:flex"><svg width="17" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2 V22" stroke="#2B1E14" stroke-width="4" stroke-linecap="round"/><path d="M5 2 V22" stroke="#8A5230" stroke-width="2" stroke-linecap="round"/><path d="M6 3 H20 L16 8 L20 13 H6 Z" fill="#E04848" stroke="#2B1E14" stroke-width="2" stroke-linejoin="round"/></svg></span><b id="wave">0/10</b></span>
+    <span class="foes" id="foesBox" hidden title="Inimigos restantes na onda"><span style="display:flex"><svg width="17" height="17" viewBox="0 0 24 24" role="img" aria-label="Inimigos restantes"><path d="M12 3 C6 3 4 7 4 11 C4 14 6 15 7 16 V19 H17 V16 C18 15 20 14 20 11 C20 7 18 3 12 3 Z" fill="#F4E9CF" stroke="#2B1E14" stroke-width="2"/><circle cx="9" cy="11" r="2" fill="#2B1E14"/><circle cx="15" cy="11" r="2" fill="#2B1E14"/></svg></span><b id="foes">0</b></span>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn-wood" id="speed" type="button" aria-label="Velocidade do jogo">1x</button>
+  <button class="btn-wood" id="pause" type="button" aria-label="Pausar">
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.5" fill="#FFF4DC"/><rect x="14" y="4" width="5" height="16" rx="1.5" fill="#FFF4DC"/></svg>
+  </button>
+</div>
+
+<div class="abilities" id="abilities" hidden>
+  <button class="ability rain" id="abRain" type="button" aria-label="Chuva de flechas: toque e depois escolha o lugar no mapa">
+    <span class="core"><img src="assets/ab_rain.png" alt=""><span class="cd"></span><span class="cdnum"></span></span><span class="lab">Chuva de flechas</span>
+  </button>
+  <button class="ability reinf" id="abReinf" type="button" aria-label="Reforços: toque e depois escolha um ponto do caminho">
+    <span class="core"><img src="assets/ab_reinf.png" alt=""><span class="cd"></span><span class="cdnum"></span></span><span class="lab">Reforços</span>
+  </button>
+</div>
+
+<div class="hud-bottom">
+  <div class="preview" id="preview" hidden></div>
+  <button class="btn-gold" id="callWave" type="button">Chamar onda 1</button>
+  <div class="progress" id="progress" hidden>Inimigos restantes: 0</div>
+</div>
+
+<div class="build" id="build" hidden>
+  <div class="ring"></div>
+  <div class="label">Escolha uma torre</div>
+</div>
+
+<div class="tmenu" id="tmenu" hidden>
+  <div class="tcard">
+    <b id="tmName">Arqueiro</b>
+    <span class="stars" id="tmStars" aria-label="Nível">★☆☆</span>
+    <span class="stat" id="tmStat">Dano 9 → 14</span>
+  </div>
+  <div class="tbtns">
+    <button class="tbtn up" id="tmUp" type="button">Melhorar<small id="tmUpCost">56 moedas</small></button>
+    <button class="tbtn sell" id="tmSell" type="button">Vender<small id="tmSellVal">+42</small></button>
+  </div>
+  <button class="tbtn move" id="tmMove" type="button" hidden>Mover soldados</button>
+</div>
+
+<div class="toast" id="toast" style="opacity:0"></div>
+<div class="tipwrap" id="tip" hidden>
+  <div class="tip" role="dialog" aria-labelledby="tipText">
+    <small id="tipStep">Passo 1 de 3</small>
+    <p id="tipText">Toque num terreno de pedra e escolha uma torre</p>
+    <button class="btn-gold" id="tipOk" type="button">Entendi</button>
+    <button class="skip" id="tipSkip" type="button">Pular tutorial</button>
+  </div>
+</div>
+
+<div class="start" id="start">
+  <h1>Guardiões da Trilha</h1>
+  <p class="sub">Construa torres e defenda o castelo por 10 ondas</p>
+  <div class="heroes" aria-hidden="true">
+    <img src="assets/t_arqueiro.png" alt="">
+    <img src="assets/t_mago.png" alt="">
+    <img class="mid" src="assets/quartel.png" alt="">
+    <img src="assets/t_gelo.png" alt="">
+    <img class="mid" src="assets/t_canhao.png" alt="">
+  </div>
+  <div class="record">
+    <div><small>Estrelas</small><b id="starsTotal">0/12</b></div>
+    <div><small>Fases vencidas</small><b id="mapsWon">0/4</b></div>
+  </div>
+  <div class="modes">
+    <button class="btn-gold" id="play" type="button">Campanha</button>
+    <button class="btn-plain" id="playEndless" type="button">Modo infinito</button>
+  </div>
+  <div class="toggles">
+    <button class="toggle" id="sfxToggle" type="button" aria-pressed="true">Sons</button>
+    <button class="toggle" id="musToggle" type="button" aria-pressed="true">Música</button>
+    <button class="toggle" id="vibToggle" type="button" aria-pressed="true">Vibração</button>
+  </div>
+  <button class="toggle" id="replayTut" type="button">Ver tutorial de novo</button>
+</div>
+
+<div class="camp" id="camp" hidden>
+  <div class="camp-top">
+    <button class="btn-wood" id="campBack" type="button">‹ Menu</button>
+    <h2 id="campTitle">Campanha</h2>
+    <div class="camp-total" id="campTotal" aria-label="Estrelas conquistadas"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#FFC93C" stroke="#2B1E14" stroke-width="2"/></svg><b id="campStars">0/12</b></div>
+  </div>
+  <p class="camp-hint" id="campHint">Toque numa fase para ver o desafio e jogar</p>
+  <div class="camp-area">
+    <svg id="campTrail" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+    <div id="campStages"></div>
+  </div>
+  <div class="camp-sheet" id="campSheet" hidden>
+    <div class="cs-row"><div class="cs-thumb" id="csThumb"></div>
+      <div class="cs-txt"><b id="csName">Floresta</b><p id="csDesc"></p></div></div>
+    <div class="cs-meta" id="csMeta"><span id="csMetaLbl">Estrelas:</span> <b id="csMetaVal">0 de 3</b></div>
+    <div class="cs-btns" id="csBtns"><button class="btn-gold" id="csPlay" type="button">Jogar</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="pauseOverlay" hidden>
+  <div class="panel">
+    <h2>Jogo pausado</h2>
+    <p>Os inimigos esperam você voltar.</p>
+    <div class="toggles">
+      <button class="toggle" id="sfxToggle2" type="button" aria-pressed="true">Sons</button>
+      <button class="toggle" id="vibToggle2" type="button" aria-pressed="true">Vibração</button>
+      <button class="toggle" id="musToggle2" type="button" aria-pressed="true">Música</button>
+    </div>
+    <div class="row">
+      <button class="btn-plain" id="toMenu" type="button">Fases</button>
+      <button class="btn-gold" id="resume" type="button">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="endOverlay" hidden>
+  <div class="panel">
+    <h2 id="endTitle">Fim de jogo</h2>
+    <p id="endText">Os monstros invadiram o castelo.</p>
+    <div class="stars3" id="endStars" hidden></div>
+    <p class="newbest" id="newBest" hidden>Novo recorde!</p>
+    <div class="row">
+      <button class="btn-plain" id="toMenu2" type="button">Fases</button>
+      <button class="btn-gold" id="restart" type="button">Jogar de novo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- Mundo (coordenadas da imagem do mapa: 768 x 1376) ----------
+  const WORLD_W = 768, WORLD_H = 1376;
+  const TOTAL_WAVES = 10;
+  // ---------- Mapas da campanha ----------
+  // cada mapa: imagem, um ou mais caminhos (routes) e os terrenos de construção (pads)
+  const DESERT_JOIN = [[392,636],[407,693],[490,721],[515,761],[508,798],[475,833],[286,891],[248,918],[235,945],[244,1001],[354,1070],[376,1099],[386,1135],[390,1250]];
+  const VOLC_TOP = [[385,-60],[385,100],[385,250],[385,380]], VOLC_END = [[385,975],[385,1060],[385,1150],[390,1250]];
+  const MAPS = [
+    { id: 'floresta', name: 'Floresta', img: 'mapa', hp: 1, desc: 'Um caminho só, do topo até o portão. Ótimo para aprender.',
+      routes: [[[398,-60],[386,40],[392,125],[380,272],[425,326],[505,360],[512,432],[472,464],[380,471],[277,481],[222,551],[270,620],[449,690],[511,738],[500,818],[295,884],[238,937],[257,1018],[348,1062],[392,1120],[390,1250]]],
+      pads: [[238,268],[534,238],[552,603],[224,770],[538,1054]] },
+    { id: 'deserto', name: 'Deserto', img: 'mapa_deserto', desc: 'Inimigos chegam por dois caminhos que se juntam no meio. Proteja os dois lados! Cuidado com as tempestades de areia.',
+      intro: 'Neste mapa os inimigos chegam por dois caminhos: um pelo topo e outro pela direita. Eles se juntam no meio, então torres perto do encontro pegam os dois grupos.',
+      routes: [[[111,-60],[126,40],[140,115],[166,184],[205,240],[255,292],[280,330],[284,439],[298,521],[350,602]].concat(DESERT_JOIN),
+               [[830,150],[750,176],[734,198],[651,224],[592,274],[564,324],[538,402],[541,506],[534,538],[484,589]].concat(DESERT_JOIN)],
+      pads: [[325,180],[120,420],[410,465],[665,385],[210,760],[440,960],[585,1070]],
+      storm: { first: 18, every: 38, last: 8, range: 0.7 } },
+    { id: 'gelo', name: 'Gelo', img: 'mapa_gelo', desc: 'Um caminho longo em zigue-zague que atravessa um lago congelado. No gelo, os inimigos escorregam bem mais rápido!',
+      intro: 'Cuidado com o lago congelado no meio do mapa: quando os inimigos passam pelo gelo, eles escorregam e ficam bem mais rápidos. Morcegos voam por cima e não escorregam. Torres de Gelo e Quartel perto do lago ajudam a segurar.',
+      routes: [[[-60,160],[60,160],[250,160],[440,165],[540,190],[595,250],[585,310],[520,345],[400,355],[260,370],[185,410],[165,480],[185,560],[230,630],[350,665],[480,690],[545,715],[520,770],[440,810],[300,850],[225,900],[215,960],[260,1015],[360,1060],[395,1110],[395,1250]]],
+      pads: [[305,278],[358,518],[600,525],[152,830],[573,1058]],
+      ice: { x: 390, y: 672, rx: 215, ry: 112, speed: 1.75 } },
+    { id: 'vulcao', name: 'Vulcão', img: 'mapa_vulcao', desc: 'O caminho se divide em volta do lago de lava. O vulcão lança bolas de fogo nas torres e a fumaça esconde os inimigos!',
+      intro: 'Aqui o caminho se divide em dois em volta do lago de lava e se junta de novo antes do portão. Espalhe torres pelos dois lados e fique de olho no vulcão lá no canto!',
+      routes: [VOLC_TOP.concat([[280,425],[185,485],[150,565],[140,655],[160,760],[220,860],[300,930]], VOLC_END),
+               VOLC_TOP.concat([[490,425],[585,485],[620,565],[630,655],[610,760],[550,860],[470,930]], VOLC_END)],
+      pads: [[230,282],[85,335],[545,285],[130,965],[640,975],[230,1135],[555,1150]],
+      lava: { exits: [[150, 620], [630, 620]], imps: 2, golems: 6 }, // monstros de fogo saem do lago de lava, no meio do caminho
+      erupt: { first: 14, every: 24, warn: 2.2, burn: 10, taps: 3, from: [680, 120] },
+      smoke: { first: 32, every: 32, last: 7, zones: [{ x: 150, y: 665, rx: 160, ry: 260, side: 'esquerdo' }, { x: 620, y: 665, rx: 160, ry: 260, side: 'direito' }] } }
+  ];
+  // inimigos de cada mapa, por papel: básico, rápido, voador, blindado e chefe
+  const ROSTER = {
+    floresta: { basic: 'goblin', fast: 'lobo', fly: 'morcego', armor: 'orc', boss: 'ogro' },
+    deserto: { basic: 'mumia', fast: 'chacal', fly: 'abutre', armor: 'escorpiao', boss: 'farao' },
+    gelo: { basic: 'kobold', fast: 'lobo_gelo', fly: 'coruja', armor: 'yeti', boss: 'rainha' },
+    vulcao: { basic: 'salamandra', fast: 'diabrete', fly: 'dragaozinho', armor: 'golem', boss: 'dragao' }
+  };
+  const rosterOf = m => ROSTER[m.id] || ROSTER.floresta; // Gelo e Vulcão usam a Floresta até ganharem os seus
+  let MAP = MAPS[0], PADS = MAP.pads, ROUTES = [];
+  const BASE_DROP = 34; // a base da torre fica um pouco abaixo do centro do terreno
+
+  const ENEMIES = {
+    goblin:  { name: 'Goblin', img: 'goblin', w: 70, h: 80, hp: 34, speed: 46, reward: 6, damage: 1, style: 'waddle', cadence: 9, atk: 4 },
+    lobo:    { name: 'Lobo', img: 'lobo', w: 84, h: 77, hp: 24, speed: 88, reward: 7, damage: 1, style: 'gallop', cadence: 12, atk: 5 },
+    morcego: { name: 'Morcego', img: 'morcego', w: 96, h: 63, hp: 20, speed: 70, reward: 7, damage: 1, style: 'flap', cadence: 14, atk: 0, flying: true },
+    orc:     { name: 'Orc blindado', img: 'orc', w: 100, h: 100, hp: 130, speed: 30, reward: 16, damage: 2, style: 'march', cadence: 5, atk: 10, armor: 0.5 },
+    // Deserto: cada um ocupa o mesmo papel de um inimigo da Floresta, um pouco mais forte
+    mumia:   { name: 'Múmia', img: 'mumia', w: 72, h: 79, hp: 36, speed: 42, reward: 6, damage: 1, style: 'waddle', cadence: 6, atk: 5, revive: 0.5 },
+    chacal:  { name: 'Chacal', img: 'chacal', w: 88, h: 83, hp: 28, speed: 98, reward: 8, damage: 1, style: 'gallop', cadence: 13, atk: 6 },
+    abutre:  { name: 'Abutre', img: 'abutre', w: 104, h: 91, hp: 28, speed: 64, reward: 8, damage: 1, style: 'flap', cadence: 11, atk: 0, flying: true },
+    escorpiao: { name: 'Escorpião gigante', img: 'escorpiao', w: 106, h: 103, hp: 165, speed: 30, reward: 18, damage: 2, style: 'march', cadence: 7, atk: 12, armor: 0.5 },
+    farao:   { name: 'Faraó Amaldiçoado', img: 'farao', w: 142, h: 158, hp: 520, speed: 21, reward: 85, damage: 5, style: 'stomp', cadence: 3.2, atk: 26, boss: true, summon: { every: 8, count: 2, type: 'mumia' } },
+    // Gelo
+    kobold:  { name: 'Kobold da neve', img: 'kobold', w: 74, h: 69, hp: 40, speed: 44, reward: 6, damage: 1, style: 'waddle', cadence: 9, atk: 5 },
+    lobo_gelo: { name: 'Lobo de gelo', img: 'lobo_gelo', w: 96, h: 75, hp: 34, speed: 100, reward: 8, damage: 1, style: 'gallop', cadence: 12, atk: 7 },
+    coruja:  { name: 'Coruja das neves', img: 'coruja', w: 104, h: 92, hp: 34, speed: 68, reward: 8, damage: 1, style: 'flap', cadence: 10, atk: 0, flying: true },
+    yeti:    { name: 'Yeti', img: 'yeti', w: 112, h: 116, hp: 210, speed: 28, reward: 20, damage: 2, style: 'march', cadence: 4.5, atk: 140 },
+    rainha:  { name: 'Rainha do Gelo', img: 'rainha', w: 138, h: 161, hp: 600, speed: 21, reward: 95, damage: 5, style: 'stomp', cadence: 3, atk: 28, boss: true, freeze: { every: 9, count: 2, range: 330, time: 14 } },
+    // Vulcão
+    salamandra: { name: 'Salamandra de fogo', img: 'salamandra', w: 76, h: 76, hp: 46, speed: 50, reward: 7, damage: 1, style: 'waddle', cadence: 10, atk: 7 },
+    dragaozinho: { name: 'Dragãozinho', img: 'dragaozinho', w: 104, h: 93, hp: 40, speed: 72, reward: 9, damage: 1, style: 'flap', cadence: 11, atk: 0, flying: true },
+    dragao:  { name: 'Dragão Ancião', img: 'dragao', w: 170, h: 160, hp: 680, speed: 20, reward: 110, damage: 6, style: 'stomp', cadence: 3, atk: 32, boss: true, breath: { every: 10, count: 2, range: 340 } },
+    diabrete: { name: 'Diabrete de fogo', img: 'diabrete', w: 74, h: 76, hp: 30, speed: 92, reward: 8, damage: 1, style: 'waddle', cadence: 13, atk: 5 },
+    golem:   { name: 'Golem de magma', img: 'golem', w: 118, h: 128, hp: 230, speed: 24, reward: 24, damage: 3, style: 'march', cadence: 3.6, atk: 16 },
+    ogro:    { name: 'Rei Ogro', img: 'ogro', w: 150, h: 157, hp: 420, speed: 22, reward: 70, damage: 5, style: 'stomp', cadence: 3.4, atk: 24, boss: true }
+  };
+
+  const TOWERS = {
+    arqueiro: { name: 'Arqueiro', img: 't_arqueiro', w: 126, h: 237, cost: 70,  range: 270, rate: 1.1,  dmg: 9,  shot: 'arrow', muzzle: 190, desc: 'Rápido e barato.' },
+    mago:     { name: 'Mago',     img: 't_mago',     w: 122, h: 250, cost: 100, range: 235, rate: 0.75, dmg: 24, shot: 'bolt',  muzzle: 228, desc: 'Raio mágico forte.' },
+    canhao:   { name: 'Canhão',   img: 't_canhao',   w: 165, h: 184, cost: 120, range: 230, rate: 0.42, dmg: 30, shot: 'ball',  muzzle: 150, splash: 85, desc: 'Explode em área.' },
+    gelo:     { name: 'Gelo',     img: 't_gelo',     w: 139, h: 255, cost: 110, range: 230, rate: 0.9,  dmg: 5,  shot: 'shard', muzzle: 225, slow: 0.5, slowTime: 1.8, desc: 'Deixa os inimigos lentos.' },
+    quartel:  { name: 'Quartel',  img: 't_quartel',  w: 160, h: 183, cost: 90,  range: 210, rate: 0,    dmg: 0,  shot: 'none',  muzzle: 120, desc: 'Soldados seguram os inimigos no caminho.' }
+  };
+  const MENU_ORDER = ['arqueiro', 'mago', 'quartel', 'canhao', 'gelo'];
+  const SOLDIER = { img: 'soldado', w: 54, h: 70, hp: [60, 90, 130], dmg: [6, 9, 13], rate: 0.8, respawn: 8, speed: 130 };
+  const SLOTS = [[-28, -12], [28, -12], [0, 20]];
+  const FLY_ALT = 55;
+
+  // ---------- Níveis das torres ----------
+  const MAX_LEVEL = 3;
+  const LV = { dmg: [1, 1.55, 2.3], range: [1, 1.1, 1.2], rate: [1, 1.12, 1.25], size: [1, 1.03, 1.06] };
+  // arte de cada nível (níveis 2 e 3 desenhados no Gemini)
+  const LEVEL_ART = { arqueiro: ['t_arqueiro', 't_arq2', 't_arq3'], mago: ['t_mago', 't_mag2', 't_mag3'], canhao: ['t_canhao', 't_can2', 't_can3'], gelo: ['t_gelo', 't_gel2', 't_gel3'], quartel: ['t_quartel', 't_qua2', 't_qua3'] };
+  const UP_COST = [0, 0.8, 1.25]; // custo para ir do nível 1→2 e 2→3, em relação ao preço da torre
+  const dmgOf = t => Math.round(t.T.dmg * LV.dmg[t.level - 1]);
+  const rangeOf = t => Math.round(t.T.range * LV.range[t.level - 1] * (t.key !== 'quartel' && stormOn() ? MAP.storm.range : 1));
+  const rateOf = t => t.T.rate * LV.rate[t.level - 1];
+  const slowOf = t => [0.5, 0.4, 0.3][t.level - 1];
+  const splashOf = t => (t.T.splash || 0) + (t.level - 1) * 15;
+  const upCostOf = t => t.level >= MAX_LEVEL ? 0 : Math.round(t.T.cost * UP_COST[t.level]);
+  const sellOf = t => Math.round(t.spent * 0.6);
+
+  // ---------- Caminho suavizado (Chaikin) e tabela de distâncias ----------
+  function chaikin(pts, it) {
+    let p = pts;
+    for (let k = 0; k < it; k++) {
+      const out = [p[0]];
+      for (let i = 0; i < p.length - 1; i++) {
+        const [x0, y0] = p[i], [x1, y1] = p[i + 1];
+        out.push([0.75 * x0 + 0.25 * x1, 0.75 * y0 + 0.25 * y1]);
+        out.push([0.25 * x0 + 0.75 * x1, 0.25 * y0 + 0.75 * y1]);
+      }
+      out.push(p[p.length - 1]);
+      p = out;
+    }
+    return p;
+  }
+  function makeRoute(wp) {
+    const path = chaikin(wp, 3), seg = [];
+    let len = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const [x0, y0] = path[i], [x1, y1] = path[i + 1];
+      const l = Math.hypot(x1 - x0, y1 - y0);
+      seg.push({ x0, y0, x1, y1, len: l, start: len });
+      len += l;
+    }
+    return { path, seg, len };
+  }
+  function loadMap(i) { MAP = MAPS[i]; PADS = MAP.pads; ROUTES = MAP.routes.map(makeRoute); }
+  loadMap(0);
+  const routeLen = r => (ROUTES[r] || ROUTES[0]).len;
+  function pointAt(d, r) {
+    const { path: PATH, seg: SEG } = ROUTES[r] || ROUTES[0];
+    if (d <= 0) { const [a, b] = [PATH[0], PATH[1]]; return { x: a[0], y: a[1], dx: b[0] - a[0], dy: b[1] - a[1] }; }
+    let lo = 0, hi = SEG.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (SEG[mid].start <= d) lo = mid; else hi = mid - 1; }
+    const s = SEG[lo], t = Math.min(1, (d - s.start) / s.len);
+    return { x: s.x0 + (s.x1 - s.x0) * t, y: s.y0 + (s.y1 - s.y0) * t, dx: s.x1 - s.x0, dy: s.y1 - s.y0 };
+  }
+
+  function routeDAt(r, x, y) {
+    let best = 0, bd = 1e9;
+    for (const s of ROUTES[r].seg) for (let k = 0; k <= 4; k++) {
+      const t = k / 4, px = s.x0 + (s.x1 - s.x0) * t, py = s.y0 + (s.y1 - s.y0) * t, dd = Math.hypot(px - x, py - y);
+      if (dd < bd) { bd = dd; best = s.start + s.len * t; }
+    }
+    return best;
+  }
+  function nearestPathPoint(x, y) {
+    let best = null;
+    for (const s of ROUTES.flatMap(R => R.seg)) {
+      for (let k = 0; k <= 4; k++) {
+        const t = k / 4, px = s.x0 + (s.x1 - s.x0) * t, py = s.y0 + (s.y1 - s.y0) * t;
+        const dist = Math.hypot(px - x, py - y);
+        if (py > 0 && (!best || dist < best.dist)) best = { x: px, y: py, d: s.start + s.len * t, dist };
+      }
+    }
+    return best;
+  }
+
+  // ---------- Imagens ----------
+  const IMG = {};
+  const files = { pad_deserto: 'assets/pad_deserto.png', pad_gelo: 'assets/pad_gelo.png', pad_vulcao: 'assets/pad_vulcao.png', mapa: 'assets/mapa.jpg', mapa_vulcao: 'assets/mapa_vulcao.jpg', mapa_deserto: 'assets/mapa_deserto.jpg', mapa_gelo: 'assets/mapa_gelo.jpg', pad: 'assets/pad.png', goblin: 'assets/goblin.png', lobo: 'assets/lobo.png', ogro: 'assets/ogro.png',
+    t_arqueiro: 'assets/t_arqueiro.png', t_mago: 'assets/t_mago.png', t_canhao: 'assets/t_canhao.png', t_gelo: 'assets/t_gelo.png',
+    t_arq2: 'assets/t_arq2.png', t_arq3: 'assets/t_arq3.png', t_mag2: 'assets/t_mag2.png', t_mag3: 'assets/t_mag3.png',
+    t_can2: 'assets/t_can2.png', t_can3: 'assets/t_can3.png', t_gel2: 'assets/t_gel2.png', t_gel3: 'assets/t_gel3.png',
+    t_qua2: 'assets/t_qua2.png', t_qua3: 'assets/t_qua3.png',
+    t_quartel: 'assets/quartel.png', salamandra: 'assets/salamandra.png', dragaozinho: 'assets/dragaozinho.png', dragao: 'assets/dragao.png', kobold: 'assets/kobold.png', lobo_gelo: 'assets/lobo_gelo.png', coruja: 'assets/coruja.png', yeti: 'assets/yeti.png', rainha: 'assets/rainha.png', fx_pickaxe: 'assets/fx_pickaxe.png', mumia: 'assets/mumia.png', chacal: 'assets/chacal.png', abutre: 'assets/abutre.png', escorpiao: 'assets/escorpiao.png', farao: 'assets/farao.png', diabrete: 'assets/diabrete.png', fx_fireball: 'assets/fx_fireball.png', fx_flames: 'assets/fx_flames.png', fx_smoke: 'assets/fx_smoke.png', fx_target: 'assets/fx_target.png', fx_bucket: 'assets/fx_bucket.png', fx_splash: 'assets/fx_splash.png', golem: 'assets/golem.png', soldado: 'assets/soldado.png', morcego: 'assets/morcego.png', orc: 'assets/orc.png' };
+  for (const [k, src] of Object.entries(files)) { const im = new Image(); im.src = src; IMG[k] = im; }
+  const ready = im => im && im.complete && im.naturalWidth;
+
+  // ---------- Ondas geradas por regra ----------
+  function buildWave(n) {
+    const list = [], R = rosterOf(MAP);
+    const goblins = Math.min(4 + n * 2, 30);
+    const wolves = n >= 3 ? Math.min(Math.floor((n - 1) * 1.5), 18) : 0;
+    for (let i = 0; i < goblins; i++) list.push({ type: R.basic, gap: 1.1 });
+    for (let i = 0; i < wolves; i++) list.splice(Math.min(list.length, 3 + i * 2), 0, { type: R.fast, gap: 0.7 });
+    const bats = n >= 4 ? Math.min(Math.floor((n - 3) * 1.5), 16) : 0;
+    for (let i = 0; i < bats; i++) list.splice(Math.min(list.length, 2 + i * 3), 0, { type: R.fly, gap: 0.8 });
+    const orcs = n >= 6 ? Math.min(n - 5, 12) : 0;
+    for (let i = 0; i < orcs; i++) list.splice(Math.min(list.length, 5 + i * 5), 0, { type: R.armor, gap: 2.0 });
+    if (n % 5 === 0) for (let i = 0; i < Math.ceil(n / 10); i++) list.push({ type: R.boss, gap: 2.5 });
+    if (MAP.lava) for (const e of list) if (e.type === R.fast || e.type === R.armor) e.lava = true; // no Vulcão eles saem do lago de lava
+    // depois da onda 10 (modo infinito) a vida cresce mais rápido, porque a quantidade parou de crescer
+    const hpMul = (1 + (n - 1) * 0.16 + Math.pow(Math.max(0, n - 10), 1.35) * 0.09);
+    return list.map(e => ({ ...e, hpMul }));
+  }
+
+  // ---------- Estado ----------
+  let S;
+  function newState() {
+    return {
+      lives: 20, coins: 200, wave: 0, queue: [], spawnTimer: 0, enemies: [], effects: [], shots: [],
+      towers: PADS.map(() => null), waveActive: false, time: 0, over: false, shake: 0, selected: -1,
+      ab: { rain: 0, reinf: 0 }, reinf: [], spawned: 0, autoIn: 0, eruptClock: 0, eruptNext: 0, balls: [], smokeClock: 0, smokeNext: 0, smokeLeft: 0, smokeZone: 0, smokeWarned: false, stormClock: 0, stormNext: 0, stormLeft: 0, stormWarned: false
+    };
+  }
+  let paused = false, speed = 1;
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let inMenu = true;
+
+  // ---------- Progresso salvo no celular ----------
+  const SAVE_KEY = 'guardioes-da-trilha-v1';
+  const save = { best: 0, wins: 0, stars: 0, bestEndless: 0, tut: false, sfx: true, music: true, vib: true, seenRain: false, seenReinf: false };
+  let endless = false;
+  try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
+  // progresso separado por mapa; o progresso antigo vira o da Floresta
+  if (!save.maps) save.maps = { floresta: { best: save.best || 0, stars: save.stars || 0, bestEndless: save.bestEndless || 0 } };
+  if (!save.seenMaps) save.seenMaps = {};
+  const mapSave = id => save.maps[id] || (save.maps[id] = { best: 0, stars: 0, bestEndless: 0 });
+  const MS = () => mapSave(MAP.id);
+  // MODO DE TESTE: deixa todas as fases liberadas (campanha e infinito). Desligar antes de lançar.
+  const TEST_UNLOCK_ALL = true;
+  const mapUnlocked = i => TEST_UNLOCK_ALL || i === 0 || mapSave(MAPS[i - 1].id).stars > 0;
+  const mapPlayable = i => mapUnlocked(i) && !!MAPS[i].img;
+  function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+
+  // ---------- Sons (gerados na hora, sem arquivos) ----------
+  const Sound = (() => {
+    let ac = null, master = null, sfxBus = null, musBus = null, noiseBuf = null, musicTimer = 0, nextNote = 0, step = 0;
+    const last = {};
+    function init() {
+      if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ac = new AC();
+      master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination);
+      sfxBus = ac.createGain(); sfxBus.gain.value = save.sfx ? 0.55 : 0; sfxBus.connect(master);
+      musBus = ac.createGain(); musBus.gain.value = save.music ? 0.16 : 0; musBus.connect(master);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      startMusic();
+    }
+    function tone(freq, dur, type, vol, slideTo, delay = 0, bus = sfxBus) {
+      if (!ac) return;
+      const t0 = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t0);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(bus); o.start(t0); o.stop(t0 + dur + 0.02);
+    }
+    function noise(dur, vol, filterFreq, type = 'lowpass', delay = 0) {
+      if (!ac) return;
+      const t0 = ac.currentTime + delay, src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = noiseBuf; f.type = type; f.frequency.value = filterFreq;
+      g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(sfxBus); src.start(t0, Math.random() * 0.5); src.stop(t0 + dur + 0.02);
+    }
+    function play(name) {
+      if (!ac || !save.sfx) return;
+      const now = ac.currentTime, gap = { arrow: 0.07, zap: 0.08, shard: 0.08, hit: 0.05, death: 0.05, coin: 0.06, sword: 0.08, tink: 0.1, stomp: 0.2 }[name] || 0;
+      if (gap && last[name] && now - last[name] < gap) return;
+      last[name] = now;
+      switch (name) {
+        case 'arrow': noise(0.12, 0.25, 2600, 'bandpass'); tone(900, 0.08, 'triangle', 0.08, 500); break;
+        case 'zap': tone(1400, 0.16, 'sawtooth', 0.12, 220); tone(700, 0.12, 'square', 0.05, 1800, 0.02); break;
+        case 'shard': tone(2200, 0.18, 'sine', 0.12, 3200); tone(3300, 0.12, 'sine', 0.06, 2600, 0.04); break;
+        case 'cannon': noise(0.18, 0.4, 600); tone(120, 0.18, 'sine', 0.35, 60); break;
+        case 'boom': noise(0.6, 0.7, 380); tone(80, 0.5, 'sine', 0.5, 35); break;
+        case 'hit': noise(0.06, 0.2, 1500, 'bandpass'); break;
+        case 'tink': tone(2600, 0.12, 'triangle', 0.12, 2300); break;
+        case 'sword': noise(0.09, 0.25, 3500, 'highpass'); tone(1800, 0.06, 'square', 0.04, 1200); break;
+        case 'death': tone(420, 0.22, 'square', 0.08, 110); noise(0.2, 0.15, 900); break;
+        case 'coin': tone(988, 0.08, 'square', 0.07); tone(1319, 0.14, 'square', 0.07, 0, 0.07); break;
+        case 'build': noise(0.25, 0.3, 500); tone(196, 0.12, 'triangle', 0.2, 0, 0); tone(294, 0.12, 'triangle', 0.2, 0, 0.1); break;
+        case 'upgrade': [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.16, 'triangle', 0.14, 0, i * 0.07)); break;
+        case 'sell': tone(784, 0.1, 'triangle', 0.12, 0, 0); tone(523, 0.14, 'triangle', 0.12, 0, 0.08); break;
+        case 'leak': tone(220, 0.35, 'sawtooth', 0.15, 110); break;
+        case 'stomp': tone(70, 0.22, 'sine', 0.35, 40); noise(0.15, 0.2, 250); break;
+        case 'horn': tone(196, 0.5, 'sawtooth', 0.09, 0, 0); tone(294, 0.7, 'sawtooth', 0.09, 0, 0.35); break;
+        case 'wave': [392, 523, 659].forEach((f, i) => tone(f, 0.18, 'square', 0.07, 0, i * 0.09)); break;
+        case 'win': [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, 0.22, 'square', 0.08, 0, i * 0.13)); break;
+        case 'lose': [392, 349, 311, 262].forEach((f, i) => tone(f, 0.32, 'triangle', 0.14, 0, i * 0.2)); break;
+        case 'click': tone(660, 0.05, 'triangle', 0.08); break;
+      }
+    }
+    // música: melodia simples em lá menor, estilo taverna, em loop
+    const MEL = [69, 0, 72, 71, 69, 0, 64, 0, 65, 0, 69, 67, 64, 0, 0, 0, 69, 0, 72, 74, 76, 0, 74, 72, 71, 0, 67, 71, 69, 0, 0, 0];
+    const BASS = [45, 45, 41, 41, 43, 43, 40, 40];
+    const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+    function startMusic() {
+      nextNote = ac.currentTime + 0.1; step = 0;
+      clearInterval(musicTimer);
+      musicTimer = setInterval(() => {
+        if (!ac) return;
+        while (nextNote < ac.currentTime + 0.25) {
+          const beat = 0.22, m = MEL[step % MEL.length];
+          const delay = Math.max(0, nextNote - ac.currentTime);
+          if (m) tone(mtof(m), beat * 1.6, 'triangle', 0.5, 0, delay, musBus);
+          if (step % 4 === 0) tone(mtof(BASS[(step / 4) % BASS.length]), beat * 3.6, 'sine', 0.6, 0, delay, musBus);
+          nextNote += beat; step++;
+        }
+      }, 60);
+    }
+    function setSfx(on) { save.sfx = on; persist(); if (sfxBus) sfxBus.gain.value = on ? 0.55 : 0; }
+    function setMusic(on) { save.music = on; persist(); if (musBus) musBus.gain.setTargetAtTime(on ? 0.16 : 0, ac.currentTime, 0.1); }
+    function duck(on) { if (musBus && save.music) musBus.gain.setTargetAtTime(on ? 0.05 : 0.16, ac.currentTime, 0.2); }
+    function suspend() { if (ac && ac.state === 'running') ac.suspend(); }
+    function resume() { if (ac && ac.state === 'suspended') ac.resume(); }
+    return { init, play, setSfx, setMusic, duck, suspend, resume };
+  })();
+
+  // ---------- Canvas e escala ----------
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  let scale = 1, offX = 0, offY = 0, dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = cv.clientWidth, H = cv.clientHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    scale = Math.max(W / WORLD_W, H / WORLD_H);
+    offX = (W - WORLD_W * scale) / 2;
+    offY = (H - WORLD_H * scale) / 2;
+    if (menuPad >= 0) openMenu(menuPad);
+    if (S && S.selected >= 0 && S.towers[S.selected]) openTowerMenu(S.selected);
+  }
+  window.addEventListener('resize', resize);
+  const toScreen = (x, y) => [offX + x * scale, offY + y * scale];
+
+  // ---------- HUD ----------
+  const $ = id => document.getElementById(id);
+  const elLives = $('lives'), elCoins = $('coins'), elWave = $('wave');
+  const btnCall = $('callWave'), elProgress = $('progress');
+  let shownCoins = -1;
+  function updateHUD() {
+    elLives.textContent = S.lives;
+    if (S.coins !== shownCoins) {
+      if (shownCoins >= 0 && S.coins > shownCoins) { elCoins.classList.remove('bump'); void elCoins.offsetWidth; elCoins.classList.add('bump'); }
+      elCoins.textContent = S.coins; shownCoins = S.coins;
+      if (menuPad >= 0) refreshMenuLocks();
+      const st = S.towers[S.selected];
+      if (st && !elT.hidden && st.level < MAX_LEVEL) $('tmUp').classList.toggle('locked', upCostOf(st) > S.coins);
+    }
+    elWave.textContent = endless ? String(S.wave) : S.wave + '/' + TOTAL_WAVES;
+    const remaining = S.queue.length + S.enemies.length;
+    const hasNext = !S.over && (endless || S.wave < TOTAL_WAVES);
+    const canCall = hasNext && (!S.waveActive || !S.queue.length);
+    btnCall.hidden = !canCall || inMenu || tutStep === 1;
+    elProgress.hidden = true;
+    $('foesBox').hidden = !S.waveActive;
+    $('foes').textContent = remaining;
+    const counting = !S.waveActive && S.autoIn > 0;
+    const label = canCall ? (S.waveActive ? 'early' + (S.wave + 1) + '|' + earlyBonus() : counting ? 'auto' + (S.wave + 1) + '|' + Math.ceil(S.autoIn) : 'next' + (S.wave + 1)) : '';
+    if (label !== btnCall.dataset.label) {
+      btnCall.dataset.label = label;
+      if (S.waveActive) btnCall.innerHTML = 'Chamar onda ' + (S.wave + 1) + ' <small>agora: +' + earlyBonus() + ' moedas</small>';
+      else if (counting) btnCall.innerHTML = 'Onda ' + (S.wave + 1) + ' em ' + Math.ceil(S.autoIn) + 's <small>chamar já: +' + autoBonus() + ' moedas</small>';
+      else btnCall.textContent = 'Chamar onda ' + (S.wave + 1);
+    }
+    renderPreview(canCall && tutStep !== 1 ? S.wave + 1 : 0);
+    refreshAbilities();
+  }
+  const elPreview = $('preview');
+  function renderPreview(n) {
+    if (elPreview.dataset.n === String(n)) return;
+    elPreview.dataset.n = String(n);
+    if (!n) { elPreview.hidden = true; return; }
+    const counts = {};
+    for (const e of buildWave(n)) counts[e.type] = (counts[e.type] || 0) + 1;
+    const order = Object.keys(counts).sort((a, b) => (ENEMIES[a].boss ? 1 : 0) - (ENEMIES[b].boss ? 1 : 0));
+    elPreview.innerHTML = '<span class="lbl">Próxima onda</span>' + order.filter(k => counts[k]).map(k =>
+      '<span title="' + ENEMIES[k].name + '"><img alt="' + ENEMIES[k].name + '" src="' + files[ENEMIES[k].img] + '">×' + counts[k] + '</span>').join('');
+    elPreview.hidden = false;
+  }
+  // bônus por chamar a próxima onda antes: mais inimigos ainda no mapa = mais risco = mais moedas
+  const earlyBonus = () => 10 + S.enemies.length * 3;
+  // depois de cada onda, a próxima vem sozinha após uma contagem curta; chamar antes dá um bônus
+  const AUTO_WAVE = 5;
+  const autoBonus = () => Math.ceil(S.autoIn || 0) * 3;
+  let toastTimer = 0;
+  function toast(msg, secs = 2.6) {
+    const t = $('toast');
+    t.textContent = msg; t.style.opacity = '1';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.style.opacity = '0'; }, secs * 1000);
+  }
+
+  // ---------- Menu de construção ----------
+  const elBuild = $('build');
+  let menuPad = -1;
+  const OPT_POS = [[-66, -34], [0, -72], [66, -34], [-52, 50], [52, 50]];
+  for (let i = 0; i < MENU_ORDER.length; i++) {
+    const key = MENU_ORDER[i], T = TOWERS[key];
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'opt'; b.dataset.key = key;
+    b.style.left = OPT_POS[i][0] + 'px'; b.style.top = OPT_POS[i][1] + 'px';
+    b.setAttribute('aria-label', 'Construir ' + T.name + ' por ' + T.cost + ' moedas');
+    b.innerHTML = '<img alt="" src="' + files[T.img] + '"><span class="price">' + T.cost + '</span>';
+    // 1º toque mostra o alcance e a torre "fantasma" no terreno; 2º toque na mesma torre constrói
+    b.addEventListener('click', ev => { ev.stopPropagation(); if (pickKey === key) build(key); else pickTower(key); });
+    elBuild.appendChild(b);
+  }
+  function refreshMenuLocks() {
+    for (const b of elBuild.querySelectorAll('.opt')) b.classList.toggle('locked', TOWERS[b.dataset.key].cost > S.coins);
+  }
+  function openMenu(i) {
+    closeTowerMenu();
+    menuPad = i;
+    const [sx, sy] = toScreen(PADS[i][0], PADS[i][1]);
+    const W = window.innerWidth;
+    elBuild.style.left = Math.max(92, Math.min(W - 92, sx)) + 'px';
+    // não deixa as opções de cima ficarem escondidas atrás do painel do topo, nem as de baixo saírem da tela
+    const hudB = document.querySelector('.hud-top').getBoundingClientRect().bottom || 60;
+    elBuild.style.top = Math.min(window.innerHeight - 95, Math.max(sy, hudB + 122)) + 'px';
+    $('toast').style.opacity = '0'; // o aviso do topo some para não cobrir as opções
+    refreshMenuLocks();
+    elBuild.hidden = false;
+    placeBuildLabel();
+  }
+  let pickKey = null;
+  const elBuildLabel = elBuild.querySelector('.label');
+  function pickTower(key) {
+    pickKey = key;
+    Sound.play('click');
+    for (const b of elBuild.querySelectorAll('.opt')) b.classList.toggle('picked', b.dataset.key === key);
+    elBuild.classList.add('picking');
+    const T = TOWERS[key];
+    elBuildLabel.innerHTML = '<b>' + T.name + '</b> · ' + T.desc + '<br><span>Toque de novo para construir</span>';
+    placeBuildLabel();
+  }
+  // mantém o rótulo dentro da tela: empurra para os lados e, se não couber em cima, mostra embaixo do menu
+  function placeBuildLabel() {
+    const L = elBuildLabel;
+    L.style.transform = 'translateX(-50%)'; L.classList.remove('below');
+    let r = L.getBoundingClientRect();
+    const topLimit = (document.querySelector('.hud-top').getBoundingClientRect().bottom || 60) + 6;
+    if (r.top < topLimit) { L.classList.add('below'); r = L.getBoundingClientRect(); }
+    const W = window.innerWidth; let dx = 0;
+    if (r.left < 8) dx = 8 - r.left; else if (r.right > W - 8) dx = W - 8 - r.right;
+    L.style.transform = 'translateX(calc(-50% + ' + dx + 'px))';
+  }
+  function closeMenu() {
+    menuPad = -1; elBuild.hidden = true; pickKey = null;
+    for (const b of elBuild.querySelectorAll('.opt')) b.classList.remove('picked'); elBuild.classList.remove('picking');
+    elBuildLabel.textContent = 'Escolha uma torre';
+  }
+  function build(key) {
+    const T = TOWERS[key];
+    if (menuPad < 0) return;
+    if (T.cost > S.coins) { toast('Faltam ' + (T.cost - S.coins) + ' moedas para o ' + T.name + '.'); return; }
+    S.coins -= T.cost;
+    Sound.play('build');
+    if (tutStep === 1) { if (S.waveActive || S.wave > 0) setTut(0); else setTut(2); }
+    const [px, py] = PADS[menuPad];
+    const tw = { key, T, x: px, y: py + BASE_DROP, cd: 0.3, recoil: 0, built: 0, level: 1, spent: T.cost };
+    if (key === 'quartel') {
+      const r = nearestPathPoint(px, py);
+      tw.rally = { x: r.x, y: r.y };
+      tw.soldiers = SLOTS.map((_, k) => ({ k, x: px, y: py + BASE_DROP, hp: SOLDIER.hp[0], maxHp: SOLDIER.hp[0], alive: true, respawn: 0, target: null, atkCd: 0, phase: Math.random() * 6, face: 1, lunge: 0, moving: false }));
+    }
+    S.towers[menuPad] = tw;
+    S.effects.push({ kind: 'dust', x: px, y: py + BASE_DROP, t: 0 });
+    closeMenu();
+    updateHUD();
+  }
+
+  // ---------- Menu da torre (melhorar / vender) ----------
+  const elT = $('tmenu');
+  function statLine(t) {
+    if (t.key === 'quartel') return t.level >= MAX_LEVEL ? 'Soldados: vida ' + SOLDIER.hp[t.level - 1] + ' · nível máximo' : 'Soldados: vida ' + SOLDIER.hp[t.level - 1] + ' → ' + SOLDIER.hp[t.level] + ', golpe mais forte';
+    if (t.level >= MAX_LEVEL) return t.key === 'gelo' ? 'Lentidão ' + Math.round((1 - slowOf(t)) * 100) + '% · nível máximo' : 'Dano ' + dmgOf(t) + ' · nível máximo';
+    const nx = { ...t, level: t.level + 1 };
+    if (t.key === 'gelo') return 'Lentidão ' + Math.round((1 - slowOf(t)) * 100) + '% → ' + Math.round((1 - slowOf(nx)) * 100) + '%';
+    if (t.key === 'canhao') return 'Dano ' + dmgOf(t) + ' → ' + dmgOf(nx) + ' · área maior';
+    return 'Dano ' + dmgOf(t) + ' → ' + dmgOf(nx) + ' · alcance maior';
+  }
+  function openTowerMenu(i) {
+    closeMenu();
+    S.selected = i;
+    const t = S.towers[i];
+    $('tmName').textContent = t.T.name;
+    $('tmStars').textContent = '★'.repeat(t.level) + '☆'.repeat(MAX_LEVEL - t.level);
+    $('tmStars').setAttribute('aria-label', 'Nível ' + t.level + ' de ' + MAX_LEVEL);
+    $('tmStat').textContent = statLine(t);
+    const up = $('tmUp');
+    if (t.level >= MAX_LEVEL) { $('tmUpCost').textContent = 'nível máximo'; up.classList.add('locked'); }
+    else { $('tmUpCost').textContent = upCostOf(t) + ' moedas'; up.classList.toggle('locked', upCostOf(t) > S.coins); }
+    $('tmSellVal').textContent = '+' + sellOf(t) + ' moedas';
+    $('tmMove').hidden = t.key !== 'quartel';
+    const [sx, sy] = toScreen(t.x, t.y);
+    const [, topY] = toScreen(t.x, t.y - artH(t));
+    const W = window.innerWidth, H = window.innerHeight;
+    elT.hidden = false;
+    const mh = elT.offsetHeight;
+    let top = topY - mh - 6;
+    if (top < 64) top = Math.min(H - mh - 90, sy + 22);
+    elT.style.left = Math.max(130, Math.min(W - 130, sx)) + 'px';
+    elT.style.top = top + 'px';
+  }
+  function closeTowerMenu() { S.selected = -1; elT.hidden = true; rallyFor = -1; }
+  $('tmUp').addEventListener('click', ev => {
+    ev.stopPropagation();
+    const i = S.selected, t = S.towers[i];
+    if (!t) return;
+    if (t.level >= MAX_LEVEL) { toast('Essa torre já está no nível máximo.'); return; }
+    const c = upCostOf(t);
+    if (c > S.coins) { toast('Faltam ' + (c - S.coins) + ' moedas para melhorar.'); return; }
+    S.coins -= c; t.spent += c; t.level++; t.built = 0.1;
+    Sound.play('upgrade');
+    if (t.soldiers) for (const so of t.soldiers) { so.maxHp = SOLDIER.hp[t.level - 1]; if (so.alive) so.hp = so.maxHp; }
+    S.effects.push({ kind: 'levelup', x: t.x, y: t.y, t: 0, h: t.T.h });
+    S.effects.push({ kind: 'float', x: t.x, y: t.y - t.T.h - 20, t: 0, text: 'Nível ' + t.level + '!', color: '#FFD95A' });
+    updateHUD();
+    openTowerMenu(i);
+  });
+  $('tmSell').addEventListener('click', ev => {
+    ev.stopPropagation();
+    const i = S.selected, t = S.towers[i];
+    if (!t) return;
+    const v = sellOf(t);
+    Sound.play('sell');
+    if (t.soldiers) releaseSoldiers(t);
+    S.coins += v;
+    S.effects.push({ kind: 'dust', x: t.x, y: t.y, t: 0 });
+    S.effects.push({ kind: 'float', x: t.x, y: t.y - 60, t: 0, text: '+' + v, color: '#FFD95A' });
+    S.towers[i] = null;
+    closeTowerMenu();
+    updateHUD();
+  });
+
+  let rallyFor = -1;
+  $('tmMove').addEventListener('click', ev => {
+    ev.stopPropagation();
+    rallyFor = S.selected;
+    elT.hidden = true;
+    toast('Toque num ponto do caminho, dentro do círculo de alcance, para posicionar os soldados.', 3.5);
+  });
+
+  // ---------- Ondas ----------
+  function startWave(auto) {
+    if (S.over || inMenu || (!endless && S.wave >= TOTAL_WAVES)) return;
+    if (S.waveActive && S.queue.length) return;
+    if (auto !== true) closeMenu(); // na chamada automática, não fecha o menu que o jogador estiver usando
+    if (!S.waveActive && S.autoIn > 0) {
+      // chamou antes de a contagem acabar: bônus pelos segundos que faltavam
+      const b = autoBonus();
+      if (b > 0) { S.coins += b; S.effects.push({ kind: 'float', x: 390, y: 120, t: 0, text: '+' + b + ' coragem', color: '#FFD95A', big: true }); Sound.play('coin'); }
+    }
+    S.autoIn = 0;
+    if (S.waveActive) {
+      // chamou antes: recebe o bônus da onda atual agora, mais o bônus de coragem
+      const bonus = 25 + S.wave * 5, extra = earlyBonus();
+      S.coins += bonus + extra;
+      { const ms = MS(); if (endless ? S.wave > ms.bestEndless : S.wave > ms.best) { if (endless) ms.bestEndless = S.wave; else ms.best = S.wave; persist(); } }
+      S.effects.push({ kind: 'float', x: 390, y: 120, t: 0, text: '+' + extra + ' coragem', color: '#FFD95A', big: true });
+      Sound.play('coin');
+    }
+    S.wave++;
+    S.queue = buildWave(S.wave);
+    S.spawnTimer = 0;
+    S.waveActive = true;
+    Sound.play(S.wave % 5 === 0 ? 'horn' : 'wave');
+    if (tutStep === 2 || tutStep === 1) setTut(0);
+    introAbility(S.wave);
+    toast(S.wave % 5 === 0 ? 'Onda ' + S.wave + ': o Rei Ogro vem junto!' : 'Onda ' + S.wave + ' chegando!');
+    updateHUD();
+  }
+  // invoca inimigos saindo da areia logo atrás de quem invocou (usado pelo Faraó)
+  function summonAt(type, route, d, hpMul) {
+    const T = ENEMIES[type], hp = Math.round(T.hp * hpMul), p = pointAt(Math.max(0, d), route);
+    S.enemies.push({ id: Math.random(), type, T, route, emerge: 0.9, d: Math.max(0, d), hp, maxHp: hp, hpMul, phase: Math.random() * 6, face: 1, x: p.x, y: p.y, lane: (Math.random() - 0.5) * 26, slowUntil: 0, slowFactor: 1, flash: 0, dead: false, alt: 0, blocker: null, atkCd: 0.5, lunge: 0 });
+    S.effects.push({ kind: 'dust', x: p.x, y: p.y, t: 0 });
+  }
+  function spawn(entry) {
+    const T = ENEMIES[entry.type];
+    const hp = Math.round(T.hp * entry.hpMul);
+    // nos mapas com mais de uma entrada, os inimigos se revezam entre os caminhos
+    const route = S.spawned++ % ROUTES.length;
+    let P0 = ROUTES[route].path[0], d0 = -Math.random() * 20, emerge = 0;
+    if (entry.lava && MAP.lava) {
+      // surge do lago de lava, já no meio do caminho
+      const [lx, ly] = MAP.lava.exits[route % MAP.lava.exits.length];
+      d0 = routeDAt(route, lx, ly); const p = pointAt(d0, route); P0 = [p.x, p.y]; emerge = 0.9;
+      S.effects.push({ kind: 'lava', x: p.x, y: p.y, t: 0 });
+      if (!save.seenLavaMob) { save.seenLavaMob = true; persist(); infoCard('Monstros de fogo', 'Diabretes e Golens de magma saem do lago de lava direto no meio do caminho, pulando as torres do começo. Deixe torres perto dos dois lados do lago!'); }
+    }
+    S.enemies.push({ id: Math.random(), type: entry.type, T, route, emerge, d: d0, hp, maxHp: hp, hpMul: entry.hpMul, phase: Math.random() * Math.PI * 2, face: 1, x: P0[0], y: P0[1], lane: (Math.random() - 0.5) * 26, slowUntil: 0, slowFactor: 1, flash: 0, dead: false, alt: T.flying ? FLY_ALT : 0, blocker: null, atkCd: 0.5, lunge: 0 });
+  }
+
+  // ---------- Combate ----------
+  function damage(e, amount, kind) {
+    if (e.dead) return;
+    if ((kind === 'arrow' || kind === 'shard' || kind === 'magic' || kind === 'blast') && inSmoke(e)) return; // torre não acerta quem está na fumaça
+    if (kind === 'arrow' && e.T.armor) {
+      amount = Math.round(amount * e.T.armor);
+      if (Math.random() < 0.15) S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 20, t: 0, text: 'TINK!', color: '#C9D3DC' });
+    }
+    e.hp -= amount; e.flash = 0.12;
+    if (e.hp <= 0 && e.T.revive && !e.revived) {
+      // a múmia cai e levanta de novo com metade da vida (só uma vez)
+      e.revived = true; e.hp = Math.round(e.maxHp * e.T.revive); e.emerge = 1.1; e.blocker = null;
+      S.effects.push({ kind: 'dust', x: e.x, y: e.y, t: 0 });
+      S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 20, t: 0, text: 'DE NOVO!', color: '#9BE07A' });
+      if (!save.seenMummy) { save.seenMummy = true; persist(); infoCard('Múmias', 'As múmias não morrem de primeira: caem e levantam uma vez com metade da vida. Continue atacando até elas virarem pó!'); }
+      return;
+    }
+    if (e.hp <= 0) {
+      e.dead = true;
+      S.coins += e.T.reward;
+      Sound.play('death'); Sound.play('coin');
+      S.effects.push({ kind: 'death', x: e.x, y: e.y - e.alt, t: 0, img: e.T.img, w: e.T.w, h: e.T.h, face: e.face });
+      S.effects.push({ kind: 'float', x: e.x, y: e.y - e.alt - e.T.h - 10, t: 0, text: '+' + e.T.reward, color: '#FFD95A' });
+    }
+  }
+  const aimY = e => e.y - e.alt - e.T.h * 0.5;
+  function findTarget(t) {
+    let best = null;
+    for (const e of S.enemies) {
+      if (e.dead || e.d < 0) continue;
+      if (t.T.shot === 'ball' && e.T.flying) continue;
+      if (inSmoke(e)) continue; // dentro da fumaça as torres não enxergam
+      if (e.emerge > 0.3) continue; // ainda saindo da lava
+      const dx = e.x - t.x, dy = (e.y - t.y) * 1.25;
+      const R = rangeOf(t);
+      if (dx * dx + dy * dy <= R * R && (!best || e.d > best.d)) best = e;
+    }
+    return best;
+  }
+  function fire(t, e) {
+    const T = t.T, mx = t.x, my = t.y - T.muzzle * (artH(t) / T.h), dmg = dmgOf(t);
+    t.recoil = 1;
+    if (T.shot === 'arrow') Sound.play('arrow');
+    else if (T.shot === 'shard') Sound.play('shard');
+    else if (T.shot === 'bolt') Sound.play('zap');
+    else if (T.shot === 'ball') Sound.play('cannon');
+    if (T.shot === 'arrow') S.shots.push({ kind: 'arrow', x: mx, y: my, target: e, speed: 950, dmg });
+    else if (T.shot === 'shard') S.shots.push({ kind: 'shard', x: mx, y: my, target: e, speed: 700, dmg, slow: slowOf(t), slowTime: T.slowTime });
+    else if (T.shot === 'bolt') {
+      damage(e, dmg, 'magic');
+      S.effects.push({ kind: 'zap', x0: mx, y0: my, x1: e.x, y1: aimY(e), t: 0, seed: Math.random() * 1000 });
+      if (Math.random() < 0.25) S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.alt - e.T.h - 20, t: 0, text: 'ZAP!', color: '#C9B6FF' });
+    } else if (T.shot === 'ball') {
+      const flight = 0.75;
+      const p = e.blocker ? { x: e.x, y: e.y } : pointAt(e.d + e.T.speed * e.slowFactor * flight, e.route);
+      S.shots.push({ kind: 'ball', sx: mx, sy: my, tx: p.x, ty: p.y, t: 0, flight, dmg, splash: splashOf(t) });
+    }
+  }
+  function updateShots(dt) {
+    for (const s of S.shots) {
+      if (s.kind === 'ball') {
+        s.t += dt;
+        if (s.t >= s.flight) {
+          s.done = true;
+          for (const e of S.enemies) if (!e.dead && !e.T.flying && Math.hypot(e.x - s.tx, (e.y - s.ty) * 1.3) <= s.splash) damage(e, s.dmg, 'blast');
+          S.effects.push({ kind: 'boom', x: s.tx, y: s.ty, t: 0 });
+          Sound.play('boom');
+          S.effects.push({ kind: 'comic', x: s.tx, y: s.ty - 70, t: 0, text: 'BOOM!', color: '#FF8A3D' });
+          S.shake = Math.max(S.shake, 3);
+        }
+        continue;
+      }
+      const e = s.target;
+      const tx = e.x, ty = aimY(e);
+      const dx = tx - s.x, dy = ty - s.y, dist = Math.hypot(dx, dy);
+      const stepLen = s.speed * dt;
+      s.ang = Math.atan2(dy, dx);
+      if (e.dead && dist < 30) { s.done = true; continue; }
+      if (dist <= stepLen) {
+        s.done = true;
+        if (!e.dead && inSmoke(e)) {
+          // o tiro some na fumaça: sem dano, sem lentidão, sem som de acerto
+          S.effects.push({ kind: 'dust', x: tx, y: ty + 10, t: 0 });
+        } else if (!e.dead) {
+          damage(e, s.dmg, s.kind);
+          if (s.kind === 'shard') { e.slowUntil = S.time + s.slowTime; e.slowFactor = s.slow; S.effects.push({ kind: 'frost', x: tx, y: ty, t: 0 }); }
+          else { S.effects.push({ kind: 'hit', x: tx, y: ty, t: 0 }); Sound.play(e.T.armor ? 'tink' : 'hit'); }
+        }
+      } else { s.x += dx / dist * stepLen; s.y += dy / dist * stepLen; }
+    }
+    S.shots = S.shots.filter(s => !s.done);
+  }
+
+  // ---------- Soldados do quartel ----------
+  function updateSoldiers(t, dt) {
+    const lv = t.level - 1;
+    const R = 120; // distância do ponto de reunião em que os soldados vão buscar inimigos
+    for (const s of t.soldiers) {
+      s.flash = Math.max(0, (s.flash || 0) - dt);
+      s.lunge = Math.max(0, s.lunge - dt * 4);
+      if (!s.alive) {
+        if (t.temp) continue;
+        s.respawn -= dt;
+        if (s.respawn <= 0) { s.alive = true; s.hp = SOLDIER.hp[lv]; s.maxHp = SOLDIER.hp[lv]; s.x = t.x; s.y = t.y; s.target = null; }
+        continue;
+      }
+      if (s.target && (s.target.dead || s.target.blocker !== s)) s.target = null;
+      if (!s.target) {
+        let best = null, bd = Infinity;
+        for (const e of S.enemies) {
+          if (e.dead || e.T.flying || e.blocker || e.d < 0) continue;
+          const dd = Math.hypot(e.x - t.rally.x, (e.y - t.rally.y) * 1.25);
+          if (dd < R && dd < bd) { best = e; bd = dd; }
+        }
+        if (best) { s.target = best; best.blocker = s; }
+      }
+      let gx, gy;
+      if (s.target) { const e = s.target; gx = e.x + (s.x <= e.x ? -38 : 38); gy = e.y + 4; }
+      else { gx = t.rally.x + SLOTS[s.k][0]; gy = t.rally.y + SLOTS[s.k][1]; }
+      const dx = gx - s.x, dy = gy - s.y, dist = Math.hypot(dx, dy), step = SOLDIER.speed * dt;
+      s.moving = dist > 3;
+      if (dist > step) { s.x += dx / dist * step; s.y += dy / dist * step; } else { s.x = gx; s.y = gy; }
+      if (Math.abs(dx) > 2) s.face = dx > 0 ? 1 : -1;
+      if (s.moving) s.phase += dt * 11;
+      if (s.target) {
+        s.face = s.target.x >= s.x ? 1 : -1;
+        if (dist < 14) {
+          s.atkCd -= dt;
+          if (s.atkCd <= 0) {
+            s.atkCd = SOLDIER.rate; s.lunge = 1;
+            damage(s.target, SOLDIER.dmg[lv], 'melee');
+            Sound.play('sword');
+            if (Math.random() < 0.12) S.effects.push({ kind: 'comic', x: s.x, y: s.y - 80, t: 0, text: 'POW!', color: '#FFE07A' });
+          }
+        }
+      }
+    }
+  }
+  function releaseSoldiers(t) {
+    for (const s of t.soldiers) { if (s.target && s.target.blocker === s) s.target.blocker = null; s.target = null; }
+  }
+
+  // ---------- Vibração (só funciona onde o celular permitir) ----------
+  function buzz(pattern) {
+    if (!save.vib) return;
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+  }
+  function starSvg(on, mid) {
+    return '<svg class="' + (mid ? 'mid' : '') + '" viewBox="0 0 24 24" role="img" aria-label="' + (on ? 'Estrela conquistada' : 'Estrela não conquistada') + '"><path d="M12 2 L15 9 L22 9.5 L16.5 14 L18.5 21.5 L12 17.5 L5.5 21.5 L7.5 14 L2 9.5 L9 9 Z" fill="' + (on ? '#FFC93C' : 'none') + '" stroke="#2B1E14" stroke-width="' + (on ? 1.6 : 1.4) + '" stroke-linejoin="round"' + (on ? '' : ' stroke-dasharray="2 1.6"') + '/></svg>';
+  }
+
+  // ---------- Habilidades especiais ----------
+  const AB = {
+    rain:  { cd: 40, unlock: 1, name: 'Chuva de flechas', radius: 120 },
+    reinf: { cd: 25, unlock: 3, name: 'Reforços', life: 15 }
+  };
+  let aiming = null;
+  const elAbil = $('abilities'), btnRain = $('abRain'), btnReinf = $('abReinf');
+  const abUnlocked = k => S.wave >= AB[k].unlock;
+  function setAiming(k) {
+    aiming = k;
+    btnRain.classList.toggle('aiming', k === 'rain');
+    btnReinf.classList.toggle('aiming', k === 'reinf');
+    if (k === 'rain') toast('Toque no mapa onde a chuva de flechas deve cair', 3);
+    if (k === 'reinf') toast('Toque num ponto do caminho para chamar os reforços', 3);
+  }
+  function tapAbility(k) {
+    if (S.over || inMenu) return;
+    Sound.play('click');
+    if (!abUnlocked(k)) { toast(AB[k].name + ' libera na onda ' + AB[k].unlock + '.'); return; }
+    if (S.ab[k] > 0) { toast(AB[k].name + ' pronta em ' + Math.ceil(S.ab[k]) + ' segundos.'); return; }
+    closeMenu(); closeTowerMenu();
+    setAiming(aiming === k ? null : k);
+  }
+  btnRain.addEventListener('click', () => tapAbility('rain'));
+  btnReinf.addEventListener('click', () => tapAbility('reinf'));
+  function castAbility(k, wx, wy) {
+    if (k === 'rain') {
+      const dmg = 30 + S.wave * 6;
+      S.effects.push({ kind: 'rain', x: wx, y: wy, t: 0, r: AB.rain.radius, seed: Math.random() * 1000 });
+      // o dano cai em três pancadas durante a chuva
+      S.rainHits = (S.rainHits || []).concat([0.25, 0.5, 0.75].map(at => ({ at: S.time + at, x: wx, y: wy, dmg: Math.round(dmg / 3) })));
+      Sound.play('arrow'); setTimeout(() => Sound.play('arrow'), 120); setTimeout(() => Sound.play('arrow'), 260);
+      S.ab.rain = AB.rain.cd;
+    } else {
+      const np = nearestPathPoint(wx, wy);
+      if (np.dist > 110) { toast('Toque mais perto do caminho para chamar os reforços.'); return; }
+      const g = { temp: true, level: 2, x: np.x, y: np.y, rally: { x: np.x, y: np.y }, life: AB.reinf.life,
+        soldiers: [0, 1].map(k2 => ({ k: k2, x: np.x + (k2 ? 30 : -30), y: np.y - 40, hp: SOLDIER.hp[1], maxHp: SOLDIER.hp[1], alive: true, respawn: 0, target: null, atkCd: 0, phase: Math.random() * 6, face: 1, lunge: 0, moving: false })) };
+      S.reinf.push(g);
+      S.effects.push({ kind: 'dust', x: np.x - 30, y: np.y, t: 0 }); S.effects.push({ kind: 'dust', x: np.x + 30, y: np.y, t: 0 });
+      Sound.play('build');
+      S.ab.reinf = AB.reinf.cd;
+    }
+    setAiming(null);
+  }
+  function updateAbilities(dt) {
+    for (const k in S.ab) S.ab[k] = Math.max(0, S.ab[k] - dt);
+    if (S.rainHits && S.rainHits.length) {
+      const due = S.rainHits.filter(h => S.time >= h.at);
+      S.rainHits = S.rainHits.filter(h => S.time < h.at);
+      for (const h of due) for (const e of S.enemies) if (!e.dead && Math.hypot(e.x - h.x, (e.y - h.y) * 1.25) <= AB.rain.radius) damage(e, h.dmg, 'rain');
+    }
+    for (const g of S.reinf) {
+      g.life -= dt;
+      updateSoldiers(g, dt);
+      if (g.life <= 0) { releaseSoldiers(g); for (const so of g.soldiers) if (so.alive) S.effects.push({ kind: 'dust', x: so.x, y: so.y, t: 0 }); }
+    }
+    S.reinf = S.reinf.filter(g => g.life > 0 && g.soldiers.some(so => so.alive));
+  }
+  // ---------- Tempestade de areia (Deserto): de tempos em tempos, as torres enxergam menos ----------
+  function stormOn() { return !!(S && MAP.storm && S.stormLeft > 0); }
+  function updateStorm(dt) {
+    const st = MAP.storm;
+    if (!st) return;
+    if (S.stormLeft > 0) S.stormLeft = Math.max(0, S.stormLeft - dt);
+    if (!S.waveActive) return;
+    if (!S.stormNext) S.stormNext = st.first;
+    S.stormClock += dt;
+    if (S.stormClock >= S.stormNext) {
+      S.stormLeft = st.last; S.stormNext += st.every; S.stormWarned = false;
+      Sound.play('horn'); buzz(80);
+      if (!save.seenStorm) { save.seenStorm = true; persist(); infoCard('Tempestade de areia', 'Enquanto a areia sopra, suas torres enxergam menos: o alcance cai 30% por ' + st.last + ' segundos. Os soldados do Quartel não são afetados. Ela volta de tempos em tempos durante as ondas.'); }
+    }
+  }
+  function drawStorm() {
+    if (!MAP.storm || !S) return;
+    const left = S.stormLeft, total = MAP.storm.last;
+    if (left <= 0 || left > total) return;
+    const a = Math.min(1, (total - left) / 0.8, left / 0.8); // entra e sai devagar
+    const W = cv.width, H = cv.height;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = 'rgba(214, 168, 92, ' + (0.38 * a) + ')'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(255, 240, 205, ' + (0.85 * a) + ')'; ctx.lineCap = 'round';
+    const t = S.time;
+    for (let i = 0; i < 60; i++) {
+      const seed = i * 97.31, len = (40 + (i % 5) * 22) * dpr;
+      const x = ((seed * 13 + t * (520 + (i % 7) * 60) * dpr) % (W + 400 * dpr)) - 200 * dpr;
+      const y = ((seed * 29) % H) + Math.sin(t * 2 + i) * 12 * dpr;
+      ctx.lineWidth = (2.5 + (i % 3) * 1.5) * dpr;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - len, y + len * 0.12); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // ---------- Vulcão: erupções que incendeiam torres e fumaça que esconde inimigos ----------
+  const inSmoke = e => {
+    if (!MAP.smoke || !(S.smokeLeft > 0)) return false;
+    const z = MAP.smoke.zones[S.smokeZone];
+    return Math.pow((e.x - z.x) / z.rx, 2) + Math.pow((e.y - z.y) / z.ry, 2) < 1;
+  };
+  function updateVolcano(dt) {
+    const er = MAP.erupt, sm = MAP.smoke;
+    if (er) {
+      for (const t of S.towers) if (t && t.burn > 0) { t.burn = Math.max(0, t.burn - dt); if (t.douse > 0) t.douse = Math.max(0, t.douse - dt); }
+      for (const b of S.balls) {
+        b.t += dt;
+        if (b.t >= b.dur && !b.hit) {
+          b.hit = true;
+          const t = S.towers[b.i];
+          if (t) {
+            t.burn = er.burn; t.taps = 0;
+            S.effects.push({ kind: 'boom', x: t.x, y: t.y - 10, t: 0 }); S.effects.push({ kind: 'lava', x: t.x, y: t.y + 6, t: 0 });
+            S.effects.push({ kind: 'comic', x: t.x, y: t.y - artH(t) * 0.6, t: 0, text: 'FOGO!', color: '#FF8A3C' });
+            S.shake = Math.max(S.shake, 6); Sound.play('cannon'); buzz(60);
+          }
+        }
+      }
+      S.balls = S.balls.filter(b => !b.hit);
+      if (S.waveActive) {
+        if (!S.eruptNext) S.eruptNext = er.first;
+        S.eruptClock += dt;
+        if (S.eruptClock >= S.eruptNext) {
+          S.eruptNext += er.every;
+          // sorteio justo: cada torre que atira entra numa "sacola"; só repete depois que todas foram atingidas
+          const ok = i => { const t = S.towers[i]; return t && t.key !== 'quartel' && !(t.burn > 0); };
+          const eligible = S.towers.map((t, i) => i).filter(ok);
+          const n = Math.min(eligible.length, S.wave >= 6 ? 2 : 1);
+          for (let k = 0; k < n; k++) {
+            S.eruptBag = (S.eruptBag || []).filter(i => ok(i) && !S.balls.some(b => b.i === i));
+            if (!S.eruptBag.length) { S.eruptBag = eligible.filter(i => !S.balls.some(b => b.i === i)); for (let j = S.eruptBag.length - 1; j > 0; j--) { const r = Math.floor(Math.random() * (j + 1)); [S.eruptBag[j], S.eruptBag[r]] = [S.eruptBag[r], S.eruptBag[j]]; } }
+            const i = S.eruptBag.shift();
+            if (i !== undefined) S.balls.push({ i, t: 0, dur: er.warn + k * 0.5 });
+          }
+          if (n) {
+            Sound.play('horn');
+            if (!save.seenErupt) { save.seenErupt = true; persist(); infoCard('Erupção do vulcão', 'O vulcão lança bolas de fogo nas suas torres. Um círculo vermelho mostra onde vai cair. A torre atingida pega fogo e para de atirar por ' + er.burn + ' segundos. Toque ' + er.taps + ' vezes na torre em chamas para apagar o fogo mais rápido!'); }
+          }
+        }
+      }
+    }
+    if (sm) {
+      if (S.smokeLeft > 0) S.smokeLeft = Math.max(0, S.smokeLeft - dt);
+      if (S.waveActive) {
+        if (!S.smokeNext) S.smokeNext = sm.first;
+        S.smokeClock += dt;
+        if (!S.smokeWarned && S.smokeClock >= S.smokeNext - 3) {
+          S.smokeWarned = true; S.smokeZone = Math.random() < 0.5 ? 0 : 1;
+        }
+        if (S.smokeClock >= S.smokeNext) {
+          S.smokeNext += sm.every; S.smokeWarned = false; S.smokeLeft = sm.last;
+          if (!save.seenSmoke) { save.seenSmoke = true; persist(); infoCard('Fumaça', 'Uma nuvem de fumaça cobriu um lado do caminho. Por ' + sm.last + ' segundos, as torres não enxergam os inimigos dentro dela. Os soldados do Quartel e as habilidades continuam funcionando, e torres do outro lado ajudam!'); }
+        }
+      }
+    }
+  }
+  // fogo na torre: labaredas que sobem e somem, brasas e fumaça; ao lado, gota d'água com os toques que faltam
+  const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+  function drawBurn(t) {
+    const h = artH(t), w = artW(t), tm = S.time, FL = IMG.fx_flames, SM = IMG.fx_smoke, BK = IMG.fx_bucket;
+    ctx.save();
+    // brilho quente
+    const gy = t.y - h * 0.45, g = ctx.createRadialGradient(t.x, gy, 6, t.x, gy, h * 0.65);
+    g.addColorStop(0, 'rgba(255, 140, 40, ' + (0.3 + 0.07 * Math.sin(tm * 9)) + ')'); g.addColorStop(1, 'rgba(255, 80, 20, 0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(t.x, gy, h * 0.65, 0, Math.PI * 2); ctx.fill();
+    // fumaça subindo do topo
+    if (ready(SM)) for (let i = 0; i < 3; i++) {
+      const ph = (tm * 0.4 + i / 3) % 1, sz = 50 + ph * 70;
+      ctx.globalAlpha = 0.55 * (1 - ph);
+      ctx.drawImage(SM, t.x - sz / 2 + Math.sin(tm + i * 2) * 12, t.y - h * 0.85 - ph * 100 - sz / 2, sz, sz * SM.naturalHeight / SM.naturalWidth);
+    }
+    ctx.globalAlpha = 1;
+    // chamas: três focos que tremem (esticam e encolhem) em ritmos diferentes
+    if (ready(FL)) {
+      const spots = [[-0.26, 0.24, 0.34], [0.27, 0.42, 0.48], [-0.08, 0.6, 0.26], [0.04, 0.82, 0.68], [0.3, 0.72, 0.22]];
+      // depois de cada balde o fogo encolhe e volta um pouco menor (fica menor a cada toque)
+      const shrink = (1 - 0.18 * (t.taps || 0)) * (1 - 0.45 * Math.min(1, (t.douse || 0) / 0.3));
+      spots.forEach(([fx, fy, k0], i) => { const k = k0 * shrink;
+        const fw = w * k * (1 + 0.18 * Math.sin(tm * (2.2 + i * 0.7) + i * 2)), fh = fw * FL.naturalHeight / FL.naturalWidth * (1 + 0.14 * Math.sin(tm * 13 + i * 1.7));
+        const x = t.x + fx * w, y = t.y - fy * h + fh * 0.12;
+        ctx.save(); ctx.translate(x, y); ctx.transform(1, 0, Math.sin(tm * 5 + i) * 0.08, 1, 0, 0);
+        ctx.drawImage(FL, -fw / 2, -fh, fw, fh); ctx.restore();
+      });
+    }
+    drawToolBadge(t, BK, t.taps || 0, 3, true);
+    ctx.restore();
+  }
+  // ícone redondo ao lado da torre (balde ou picareta) com bolinhas dos toques
+  function drawToolBadge(t, im, done, total, flipToward) {
+    const h = artH(t), w = artW(t), tm = S.time;
+    const viewR = (cv.clientWidth - offX) / scale - 8, viewL = -offX / scale + 8;
+    let bx = t.x + w * 0.5 + 34; if (bx + 44 > viewR) bx = t.x - w * 0.5 - 34; bx = Math.max(viewL + 44, Math.min(viewR - 44, bx));
+    const by = t.y - h * 0.48, bw = 66, bh = ready(im) ? bw * im.naturalHeight / im.naturalWidth : bw;
+    ctx.save(); ctx.translate(bx, by); ctx.rotate(Math.sin(tm * 4) * 0.12); const pul = 1 + 0.05 * Math.sin(tm * 8); ctx.scale(pul, pul);
+    ctx.fillStyle = 'rgba(255, 244, 220, 0.92)'; ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    if (ready(im)) { if (flipToward && bx < t.x) ctx.scale(-1, 1); ctx.drawImage(im, -bw / 2, -bh / 2, bw, bh); }
+    ctx.restore();
+    for (let k = 0; k < total; k++) {
+      const px = bx + (k - (total - 1) / 2) * 17, py = by + 52;
+      ctx.beginPath(); ctx.arc(px, py, 6.5, 0, Math.PI * 2);
+      ctx.fillStyle = k < done ? '#4FB8F0' : '#FFF4DC'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#2B1E14'; ctx.stroke();
+    }
+  }
+  // torre presa num bloco de gelo que vai rachando a cada golpe de picareta
+  function drawFrozen(t) {
+    const h = artH(t), w = artW(t), picks = t.picks || 0, jig = (t.chip || 0) > 0 ? Math.sin(S.time * 80) * 3 : 0;
+    ctx.save(); ctx.translate(t.x + jig, t.y);
+    const bw = w * 1.05, bh = h * 1.02;
+    // bloco: forma irregular com pontas de cristal
+    ctx.beginPath();
+    ctx.moveTo(-bw * 0.5, 4); ctx.lineTo(-bw * 0.56, -bh * 0.35); ctx.lineTo(-bw * 0.44, -bh * 0.7); ctx.lineTo(-bw * 0.3, -bh * 0.82);
+    ctx.lineTo(-bw * 0.16, -bh * 1.02); ctx.lineTo(0, -bh * 0.9); ctx.lineTo(bw * 0.18, -bh * 1.06); ctx.lineTo(bw * 0.32, -bh * 0.84);
+    ctx.lineTo(bw * 0.48, -bh * 0.66); ctx.lineTo(bw * 0.56, -bh * 0.3); ctx.lineTo(bw * 0.5, 4); ctx.closePath();
+    const g = ctx.createLinearGradient(-bw * 0.5, -bh, bw * 0.5, 0);
+    g.addColorStop(0, 'rgba(225, 248, 255, 0.72)'); g.addColorStop(0.5, 'rgba(130, 205, 245, 0.5)'); g.addColorStop(1, 'rgba(90, 165, 230, 0.62)');
+    ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#1D4F7A'; ctx.stroke();
+    // brilhos
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-bw * 0.36, -bh * 0.25); ctx.lineTo(-bw * 0.3, -bh * 0.6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-bw * 0.22, -bh * 0.18); ctx.lineTo(-bw * 0.19, -bh * 0.34); ctx.stroke();
+    // rachaduras, uma a mais a cada golpe
+    ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 3;
+    const cracks = [[[0, -bh * 0.5], [-bw * 0.2, -bh * 0.62], [-bw * 0.28, -bh * 0.8]], [[0, -bh * 0.5], [bw * 0.22, -bh * 0.42], [bw * 0.4, -bh * 0.52]], [[0, -bh * 0.5], [bw * 0.06, -bh * 0.2], [-bw * 0.1, -bh * 0.05]]];
+    for (let k = 0; k < picks; k++) { ctx.beginPath(); cracks[k].forEach(([x, y], j) => j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
+    // cristais na base
+    ctx.fillStyle = '#BFEAFF'; ctx.strokeStyle = '#1D4F7A'; ctx.lineWidth = 3;
+    [[-bw * 0.45, 22], [bw * 0.42, 20], [-bw * 0.1, 26]].forEach(([x, s2]) => { ctx.beginPath(); ctx.moveTo(x - s2 * 0.4, 6); ctx.lineTo(x, -s2); ctx.lineTo(x + s2 * 0.4, 6); ctx.closePath(); ctx.fill(); ctx.stroke(); });
+    ctx.restore();
+    if (t.chip > 0) t.chip = Math.max(0, t.chip - 1 / 60);
+    drawToolBadge(t, IMG.fx_pickaxe, picks, 3, false);
+  }
+  function drawVolcanoFx() {
+    const er = MAP.erupt, sm = MAP.smoke, tm = S.time;
+    if (er) for (const b of S.balls) {
+      const t = S.towers[b.i]; if (!t) continue;
+      const p = Math.min(1, b.t / b.dur), TG = IMG.fx_target, FB = IMG.fx_fireball;
+      // alvo no chão: pulsa e um anel dourado vai fechando até a hora do impacto
+      ctx.save(); ctx.translate(t.x, t.y);
+      if (ready(TG)) { const tw = 150 * (1 + 0.04 * Math.sin(tm * 10)), th = tw * TG.naturalHeight / TG.naturalWidth; ctx.globalAlpha = 0.55 + 0.4 * p; ctx.drawImage(TG, -tw / 2, -th / 2, tw, th); ctx.globalAlpha = 1; }
+      ctx.strokeStyle = 'rgba(255, 225, 130, 0.95)'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.ellipse(0, 0, 70 * (1 - p) + 10, 44 * (1 - p) + 6, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+      // bola de fogo: vem do vulcão girada na direção do movimento
+      const [x0, y0] = er.from, x1 = t.x, y1 = t.y - 40;
+      const pos = q => [x0 + (x1 - x0) * q, y0 + (y1 - y0) * q - Math.sin(Math.PI * q) * 70];
+      const [x, y] = pos(p), [xa, ya] = pos(Math.min(1, p + 0.02));
+      if (ready(FB)) {
+        const ang = Math.atan2(ya - y, xa - x) - Math.atan2(1, -1); // a arte já "voa" para baixo e para a esquerda
+        const fw = 84, fh = fw * FB.naturalHeight / FB.naturalWidth;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.drawImage(FB, -fw * 0.3, -fh * 0.7, fw, fh); ctx.restore();
+      }
+    }
+    if (sm && S.smokeLeft > 0) {
+      const z = sm.zones[S.smokeZone], a = Math.min(1, (sm.last - S.smokeLeft) / 0.8, S.smokeLeft / 0.8), SM = IMG.fx_smoke;
+      if (ready(SM)) {
+        // várias nuvens pintadas cobrindo a área, flutuando devagar
+        const pts = [[0, -0.62], [-0.45, -0.3], [0.45, -0.3], [0, 0], [-0.45, 0.3], [0.45, 0.3], [0, 0.62]];
+        ctx.save(); ctx.globalAlpha = 0.92 * a;
+        pts.forEach(([u, v], i) => {
+          const cw = z.rx * 1.25 * (1 + 0.05 * Math.sin(tm * 0.9 + i)), ch = cw * SM.naturalHeight / SM.naturalWidth;
+          const cx = z.x + u * z.rx * 0.8 + Math.sin(tm * 0.6 + i * 1.3) * 10, cy = z.y + v * z.ry * 0.8 + Math.cos(tm * 0.5 + i) * 8;
+          ctx.drawImage(SM, cx - cw / 2, cy - ch / 2, cw, ch);
+        });
+        ctx.restore();
+      }
+    }
+  }
+  let shownAb = '';
+  function refreshAbilities() {
+    elAbil.hidden = inMenu || S.over;
+    for (const [k, b] of [['rain', btnRain], ['reinf', btnReinf]]) {
+      const locked = !abUnlocked(k), left = S.ab[k];
+      const key = k + locked + Math.ceil(left);
+      b.classList.toggle('locked', locked);
+      b.querySelector('.cd').style.setProperty('--p', locked ? '100%' : (left / AB[k].cd * 100).toFixed(1) + '%');
+      const num = b.querySelector('.cdnum');
+      if (locked) num.innerHTML = '<span style="font-size:13px;line-height:1.05;text-align:center">Onda<br>' + AB[k].unlock + '</span>';
+      else num.textContent = left > 0 ? Math.ceil(left) : '';
+      b.setAttribute('aria-label', AB[k].name + (locked ? ', libera na onda ' + AB[k].unlock : left > 0 ? ', pronta em ' + Math.ceil(left) + ' segundos' : ', pronta'));
+    }
+  }
+  // apresenta a habilidade na primeira vez que ela fica disponível
+  function introAbility(n) {
+    if (!save.seenRain && (n >= 2 || (n === 1 && !tutActive))) { save.seenRain = true; persist(); infoCard('Nova habilidade', 'Chuva de flechas: toque no botão vermelho à esquerda e depois no mapa. Recarrega em 40 segundos.'); }
+    else if (n >= 3 && !save.seenReinf) { save.seenReinf = true; persist(); infoCard('Nova habilidade', 'Reforços: toque no botão azul e depois no caminho. Dois soldados seguram os inimigos por 15 segundos. Recarrega em 25 segundos.'); }
+  }
+
+  // ---------- Atualização ----------
+  function update(dt) {
+    S.time += dt;
+    if (S.waveActive && S.queue.length) {
+      S.spawnTimer -= dt;
+      if (S.spawnTimer <= 0) { const e = S.queue.shift(); spawn(e); S.spawnTimer = e.gap; }
+    }
+    for (const e of S.enemies) {
+      if (S.time > e.slowUntil) e.slowFactor = 1;
+      // terreno: no lago congelado os inimigos que andam escorregam mais rápido
+      const ice = MAP.ice;
+      e.onIce = !!ice && !e.T.flying && !e.blocker && Math.pow((e.x - ice.x) / ice.rx, 2) + Math.pow((e.y - ice.y) / ice.ry, 2) < 1;
+      let v = e.T.speed * e.slowFactor * (e.onIce ? ice.speed : 1);
+      if (e.emerge > 0) { e.emerge = Math.max(0, e.emerge - dt); v = 0; }
+      const b = e.blocker;
+      if (b && (!b.alive || b.target !== e)) e.blocker = null;
+      const foe = e.blocker;
+      let engaged = !!(foe && Math.hypot(foe.x - e.x, foe.y - e.y) < 56);
+      e.lunge = Math.max(0, e.lunge - dt * 4);
+      if (engaged) {
+        // parado lutando com o soldado
+        e.atkCd -= dt;
+        if (e.atkCd <= 0) {
+          e.atkCd = 0.9; e.lunge = 1;
+          const s = e.blocker;
+          s.hp -= e.T.atk;
+          s.flash = 0.12;
+          if (s.hp <= 0) {
+            s.alive = false; s.respawn = SOLDIER.respawn; s.target = null;
+            S.effects.push({ kind: 'death', x: s.x, y: s.y, t: 0, img: SOLDIER.img, w: SOLDIER.w, h: SOLDIER.h, face: s.face });
+            e.blocker = null;
+          }
+        }
+      } else e.d += v * dt;
+      const p = pointAt(e.d, e.route);
+      const len = Math.hypot(p.dx, p.dy) || 1;
+      e.x = p.x + (-p.dy / len) * e.lane;
+      e.y = p.y + (p.dx / len) * e.lane;
+      if (engaged) e.face = foe.x >= e.x ? 1 : -1;
+      else if (p.dx > 0.5) e.face = 1; else if (p.dx < -0.5) e.face = -1;
+      const prevStep = Math.floor(e.phase / Math.PI);
+      e.phase += dt * e.T.cadence * e.slowFactor * (engaged ? 0.25 : 1);
+      if (e.T.style === 'stomp' && Math.floor(e.phase / Math.PI) !== prevStep && e.d > 0) {
+        const side = Math.floor(e.phase / Math.PI) % 2 ? 1 : -1;
+        S.effects.push({ kind: 'dust', x: e.x + side * 30, y: e.y, t: 0 });
+        S.shake = Math.max(S.shake, 5);
+        Sound.play('stomp');
+      }
+      e.flash = Math.max(0, e.flash - dt);
+      if (e.T.breath && e.d > 60 && !e.emerge) {
+        e.brCd = (e.brCd === undefined ? 5 : e.brCd) - dt;
+        if (e.brCd <= 0) {
+          const B = e.T.breath;
+          const near = S.towers.map((t, i) => ({ t, i })).filter(o => o.t && o.t.key !== 'quartel' && !(o.t.burn > 0) && Math.hypot(o.t.x - e.x, o.t.y - e.y) <= B.range)
+            .sort((a, b) => Math.hypot(a.t.x - e.x, a.t.y - e.y) - Math.hypot(b.t.x - e.x, b.t.y - e.y)).slice(0, B.count);
+          if (near.length) {
+            e.brCd = B.every;
+            for (const o of near) { o.t.burn = (MAP.erupt ? MAP.erupt.burn : 10); o.t.taps = 0; S.effects.push({ kind: 'beam', fire: true, x0: e.x + e.face * e.T.w * 0.4, y0: e.y - e.T.h * 0.6, x1: o.t.x, y1: o.t.y - artH(o.t) * 0.5, t: 0 }); S.effects.push({ kind: 'boom', x: o.t.x, y: o.t.y - 10, t: 0 }); }
+            S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 24, t: 0, text: 'QUEIMEM!', color: '#FF8A3C' });
+            Sound.play('cannon'); buzz(70);
+            if (!save.seenDragon) { save.seenDragon = true; persist(); infoCard('Dragão Ancião', 'O chefe do Vulcão cospe fogo e incendeia as torres perto dele. Toque 3 vezes nas torres em chamas para apagar com o balde!'); }
+          } else e.brCd = 1;
+        }
+      }
+      if (e.T.freeze && e.d > 60 && !e.emerge) {
+        e.frzCd = (e.frzCd === undefined ? 5 : e.frzCd) - dt;
+        if (e.frzCd <= 0) {
+          const F = e.T.freeze;
+          const near = S.towers.map((t, i) => ({ t, i })).filter(o => o.t && o.t.key !== 'quartel' && !(o.t.frozen > 0) && Math.hypot(o.t.x - e.x, o.t.y - e.y) <= F.range)
+            .sort((a, b) => Math.hypot(a.t.x - e.x, a.t.y - e.y) - Math.hypot(b.t.x - e.x, b.t.y - e.y)).slice(0, F.count);
+          if (near.length) {
+            e.frzCd = F.every;
+            for (const o of near) { o.t.frozen = F.time; o.t.picks = 0; S.effects.push({ kind: 'beam', x0: e.x, y0: e.y - e.T.h * 0.8, x1: o.t.x, y1: o.t.y - artH(o.t) * 0.5, t: 0 }); }
+            S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 24, t: 0, text: 'CONGELEM!', color: '#E9A6FF' });
+            Sound.play('shard'); buzz(60);
+            if (!save.seenQueen) { save.seenQueen = true; persist(); infoCard('Rainha do Gelo', 'A Rainha congela as torres perto dela, que param de atirar. Toque 3 vezes na torre congelada para quebrar o gelo com a picareta!'); }
+          } else e.frzCd = 1;
+        }
+      }
+      if (e.T.summon && e.d > 60 && !e.emerge) {
+        e.sumCd = (e.sumCd === undefined ? 4 : e.sumCd) - dt;
+        if (e.sumCd <= 0) {
+          e.sumCd = e.T.summon.every;
+          for (let k = 0; k < e.T.summon.count; k++) summonAt(e.T.summon.type, e.route, e.d - 45 - k * 40, e.hpMul || 1);
+          S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 24, t: 0, text: 'LEVANTEM!', color: '#9BE07A' });
+          Sound.play('horn');
+          if (!save.seenPharaoh) { save.seenPharaoh = true; persist(); infoCard('Faraó Amaldiçoado', 'O chefe do Deserto levanta 2 múmias da areia atrás dele de tempos em tempos. Derrube-o rápido, antes que o exército cresça!'); }
+        }
+      }
+    }
+    S.shake = Math.max(0, S.shake - dt * 22);
+
+    for (const t of S.towers) {
+      if (!t) continue;
+      t.built += dt;
+      t.recoil = Math.max(0, t.recoil - dt * 5);
+      if (t.key === 'quartel') { updateSoldiers(t, dt); continue; }
+      if (t.frozen > 0) { t.frozen = Math.max(0, t.frozen - dt); continue; } // congelada: não atira até quebrar o gelo ou derreter
+      if (t.burn > 0) continue; // em chamas: não atira
+      t.cd -= dt;
+      if (t.cd <= 0) {
+        const e = findTarget(t);
+        if (e) { fire(t, e); t.cd = 1 / rateOf(t); }
+      }
+    }
+    updateShots(dt);
+    updateAbilities(dt);
+    updateStorm(dt);
+    updateVolcano(dt);
+    if (!S.waveActive && S.autoIn > 0 && !S.over) { S.autoIn -= dt; if (S.autoIn <= 0) { S.autoIn = 0; startWave(true); } }
+
+    const leaked = S.enemies.filter(e => !e.dead && e.d >= routeLen(e.route));
+    for (const e of leaked) {
+      e.dead = true;
+      S.lives = Math.max(0, S.lives - e.T.damage);
+      Sound.play('leak'); buzz(e.T.boss ? [80, 40, 120] : 60);
+      S.effects.push({ kind: 'float', x: 390, y: 1230, t: 0, text: '-' + e.T.damage, color: '#FF5A4A', big: true });
+    }
+    S.enemies = S.enemies.filter(e => !e.dead);
+    if (S.lives <= 0 && !S.over) endGame(false);
+
+    for (const f of S.effects) f.t += dt;
+    S.effects = S.effects.filter(f => f.t < 1.2);
+
+    if (S.waveActive && !S.queue.length && !S.enemies.length && !S.over) {
+      S.waveActive = false;
+      const bonus = 25 + S.wave * 5;
+      S.coins += bonus;
+      { const ms = MS(); if (endless ? S.wave > ms.bestEndless : S.wave > ms.best) { if (endless) ms.bestEndless = S.wave; else ms.best = S.wave; persist(); } }
+      if (!endless && S.wave >= TOTAL_WAVES) endGame(true);
+      else {
+        toast('Onda ' + S.wave + ' concluída! +' + bonus + ' moedas'); Sound.play('wave');
+        if (!tutActive) S.autoIn = AUTO_WAVE;
+        if (tutStep === 0 && tutActive && S.towers.some(Boolean)) {
+          const lost = 20 - S.lives;
+          TUT[3][1] = (lost > 0
+            ? 'Onda 1 terminou, mas ' + (lost === 1 ? '1 inimigo chegou' : lost + ' inimigos chegaram') + ' ao portão. '
+            : 'Onda 1 terminou sem nenhum inimigo chegar ao portão! ')
+            + 'Entre as ondas, construa mais torres nos terrenos vazios ou toque numa torre para melhorar ou vender.';
+          setTut(3);
+        }
+      }
+    }
+    updateHUD();
+  }
+
+  function endGame(win) {
+    S.over = true; S.waveActive = false; closeMenu(); closeTowerMenu();
+    const reached = win ? TOTAL_WAVES : S.wave - 1;
+    const isBest = reached > (S.startBest || 0);
+    if (win) save.wins++;
+    const ms = MS();
+    if (endless) { if (reached > ms.bestEndless) ms.bestEndless = reached; }
+    else if (reached > ms.best) ms.best = reached;
+    setTut(-1);
+    persist();
+    $('newBest').hidden = !isBest || reached <= 0;
+    // estrelas: 3 = defesa perfeita (nenhuma vida perdida), 2 = 10 ou mais vidas, 1 = venceu
+    const st = win && !endless ? (S.lives >= 20 ? 3 : S.lives >= 10 ? 2 : 1) : 0;
+    const unlockedBefore = MAPS.filter((_, i) => mapPlayable(i)).length;
+    if (st > (ms.stars || 0)) ms.stars = st;
+    const newMap = MAPS.filter((_, i) => mapPlayable(i)).length > unlockedBefore;
+    persist();
+    const es = $('endStars');
+    es.hidden = !st;
+    if (st) es.innerHTML = [0, 1, 2].map(i => starSvg(i < st, i === 1)).join('');
+    if (!win) buzz([120, 60, 120, 60, 200]);
+    Sound.play(win ? 'win' : 'lose');
+    $('endTitle').textContent = win ? 'Vitória!' : 'Fim de jogo';
+    $('endText').textContent = win ? (st === 3 ? 'Defesa perfeita! Nenhum inimigo passou pelo portão.' : st === 2 ? 'Vitória com ' + S.lives + ' vidas. Para 3 estrelas, não deixe nenhum inimigo passar.' : 'Vitória por pouco, com ' + S.lives + (S.lives === 1 ? ' vida' : ' vidas') + '. Termine com 10 ou mais para 2 estrelas.')
+      : endless ? 'Você resistiu a ' + reached + (reached === 1 ? ' onda' : ' ondas') + ' no modo infinito.'
+      : 'Os monstros invadiram o castelo na onda ' + S.wave + '.';
+    if (newMap) $('endText').textContent += ' Nova fase liberada na campanha!';
+    $('endOverlay').hidden = false;
+    updateHUD();
+  }
+
+  // ---------- Desenho ----------
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#3E6B26';
+    ctx.fillRect(0, 0, W, H);
+    const shx = S.shake && !reduceMotion ? (Math.random() - 0.5) * S.shake : 0;
+    const shy = S.shake && !reduceMotion ? (Math.random() - 0.5) * S.shake : 0;
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * (offX + shx * scale), dpr * (offY + shy * scale));
+
+    if (ready(IMG[MAP.img])) ctx.drawImage(IMG[MAP.img], 0, 0, WORLD_W, WORLD_H);
+
+    // terrenos vazios
+    PADS.forEach(([px, py], i) => {
+      if (S.towers[i]) return;
+      const PI_ = IMG['pad_' + MAP.id] || IMG.pad; // cada mapa tem a sua base de construção
+      if (MAP.id === 'vulcao') {
+        // brilho alaranjado pulsando sob as bases do Vulcão, para elas aparecerem no chão escuro
+        const gl = 0.55 + 0.15 * Math.sin(S.time * 2.5 + i), g = ctx.createRadialGradient(px, py, 50, px, py, 118);
+        g.addColorStop(0, 'rgba(255, 140, 40, ' + gl + ')'); g.addColorStop(1, 'rgba(255, 90, 20, 0)');
+        ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(px, py, 118, 90, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
+      if (ready(PI_)) ctx.drawImage(PI_, px - PI_.naturalWidth / 2, py - PI_.naturalHeight / 2);
+      const pulse = 0.5 + 0.5 * Math.sin(S.time * 3 + i);
+      ctx.save();
+      ctx.globalAlpha = menuPad === i ? 0.9 : 0.2 + 0.35 * pulse;
+      ctx.strokeStyle = '#FFF4DC'; ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
+      ctx.beginPath(); ctx.ellipse(px, py, 74, 54, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    });
+
+    // prévia antes de comprar: alcance e torre transparente no terreno
+    if (menuPad >= 0 && pickKey) {
+      const T = TOWERS[pickKey], [px, py] = PADS[menuPad], gy = py + BASE_DROP;
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(px, gy, T.range, T.range / 1.25, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 217, 90, 0.22)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(43, 30, 20, 0.55)'; ctx.lineWidth = 7; ctx.stroke();
+      ctx.strokeStyle = '#FFD95A'; ctx.lineWidth = 4; ctx.setLineDash([14, 9]); ctx.stroke();
+      const im = IMG[T.img];
+      if (ready(im)) { ctx.globalAlpha = 0.6; ctx.drawImage(im, px - T.w / 2, gy - T.h, T.w, T.h); }
+      ctx.restore();
+    }
+
+    // alcance da torre selecionada
+    if (S.selected >= 0 && S.towers[S.selected]) {
+      const t = S.towers[S.selected];
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 244, 220, 0.14)'; ctx.strokeStyle = 'rgba(255, 244, 220, 0.85)';
+      ctx.lineWidth = 3; ctx.setLineDash([12, 9]);
+      const R = rangeOf(t);
+      ctx.beginPath(); ctx.ellipse(t.x, t.y, R, R / 1.25, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      if (t.rally) {
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(91, 192, 235, 0.18)'; ctx.strokeStyle = 'rgba(207, 231, 245, 0.9)';
+        ctx.beginPath(); ctx.ellipse(t.rally.x, t.rally.y, 120, 96, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(t.rally.x, t.rally.y); ctx.lineTo(t.rally.x, t.rally.y - 46); ctx.stroke();
+        ctx.fillStyle = '#E04848'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(t.rally.x, t.rally.y - 46); ctx.lineTo(t.rally.x + 28, t.rally.y - 38); ctx.lineTo(t.rally.x, t.rally.y - 28); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.setLineDash([12, 9]); ctx.lineWidth = 3;
+      }
+      if (t.level < MAX_LEVEL) {
+        const R2 = Math.round(t.T.range * LV.range[t.level]);
+        ctx.strokeStyle = 'rgba(255, 217, 90, 0.75)'; ctx.setLineDash([4, 10]);
+        ctx.beginPath(); ctx.ellipse(t.x, t.y, R2, R2 / 1.25, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // poeira e explosões no chão
+    for (const f of S.effects) {
+      if (f.kind === 'dust') {
+        const k = f.t / 0.7, a = Math.max(0, 1 - k);
+        ctx.fillStyle = 'rgba(214, 186, 138, ' + (0.55 * a) + ')';
+        for (let i = 0; i < 4; i++) {
+          const ang = (i / 4) * Math.PI * 2 + 0.6, r = 10 + k * 22;
+          ctx.beginPath(); ctx.ellipse(f.x + Math.cos(ang) * r * 1.2, f.y + Math.sin(ang) * r * 0.45, 10 + k * 10, 6 + k * 6, 0, 0, Math.PI * 2); ctx.fill();
+        }
+      } else if (f.kind === 'beam') {
+        // raio de gelo da Rainha até a torre
+        const a = Math.max(0, 1 - f.t / 0.5);
+        ctx.save(); ctx.globalAlpha = a; ctx.lineCap = 'round';
+        ctx.strokeStyle = f.fire ? 'rgba(255, 110, 30, 0.9)' : 'rgba(233, 166, 255, 0.9)'; ctx.lineWidth = f.fire ? 20 : 12; ctx.beginPath(); ctx.moveTo(f.x0, f.y0); ctx.lineTo(f.x1, f.y1); ctx.stroke();
+        ctx.strokeStyle = f.fire ? '#FFE070' : '#E8FBFF'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(f.x0, f.y0); ctx.lineTo(f.x1, f.y1); ctx.stroke();
+        ctx.restore();
+      } else if (f.kind === 'shatter') {
+        // bloco de gelo estourando em cacos
+        const k = Math.min(1, f.t / 0.7), a = Math.max(0, 1 - f.t / 0.8);
+        ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#BFEAFF'; ctx.strokeStyle = '#1D4F7A'; ctx.lineWidth = 2.5;
+        for (let i = 0; i < 12; i++) {
+          const ang = i / 12 * Math.PI * 2 + 0.3, r = 20 + k * 90, x = f.x + Math.cos(ang) * r, y = f.y + Math.sin(ang) * r * 0.8 + k * k * 60, sz = 12 * (1 - k * 0.5);
+          ctx.save(); ctx.translate(x, y); ctx.rotate(ang + k * 4);
+          ctx.beginPath(); ctx.moveTo(0, -sz); ctx.lineTo(sz * 0.6, 0); ctx.lineTo(0, sz * 0.7); ctx.lineTo(-sz * 0.5, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+        }
+        ctx.restore();
+      } else if (f.kind === 'lava') {
+        // respingo de lava quando um monstro sai do lago
+        const k = Math.min(1, f.t / 0.9), a = Math.max(0, 1 - f.t / 1.1);
+        ctx.save(); ctx.globalAlpha = a;
+        ctx.fillStyle = 'rgba(255, 110, 20, 0.55)'; ctx.beginPath(); ctx.ellipse(f.x, f.y, 30 + k * 40, 12 + k * 16, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#FFB13C';
+        for (let i = 0; i < 6; i++) { const ang = -Math.PI * (0.15 + 0.7 * i / 5), r = 20 + k * 60; ctx.beginPath(); ctx.arc(f.x + Math.cos(ang) * r, f.y + Math.sin(ang) * r * 0.9 - k * 20, 6 * (1 - k) + 2, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+      } else if (f.kind === 'boom') {
+        const k = Math.min(1, f.t / 0.5), a = Math.max(0, 1 - f.t / 0.6);
+        ctx.fillStyle = 'rgba(60, 40, 20, ' + (0.35 * a) + ')';
+        ctx.beginPath(); ctx.ellipse(f.x, f.y, 40 + 50 * k, 18 + 22 * k, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 170, 60, ' + (0.8 * a) + ')';
+        ctx.beginPath(); ctx.arc(f.x, f.y - 20, 20 + 40 * k, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 240, 180, ' + (0.9 * a) + ')';
+        ctx.beginPath(); ctx.arc(f.x, f.y - 20, 8 + 20 * k, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // torres e inimigos juntos, ordenados por profundidade
+    const things = [];
+    S.towers.forEach(t => { if (t) things.push({ y: t.y, draw: () => drawTower(t) }); });
+    for (const e of S.enemies) things.push({ y: e.y + (e.T.flying ? 2000 : 0), draw: () => drawEnemy(e) });
+    S.towers.forEach(t => { if (t && t.soldiers) for (const s of t.soldiers) if (s.alive) things.push({ y: s.y, draw: () => drawSoldier(s) }); });
+    for (const g of S.reinf) for (const s of g.soldiers) if (s.alive) things.push({ y: s.y, draw: () => drawSoldier(s, g.life < 2 ? g.life / 2 : 1) });
+    for (const f of S.effects) if (f.kind === 'death') things.push({ y: f.y, draw: () => drawDeath(f) });
+    things.sort((a, b) => a.y - b.y);
+    for (const th of things) th.draw();
+
+    // seta do tutorial
+    if (tutStep === 1) {
+      const spots = [];
+      // passo 1: uma seta em cada terreno vazio, para a pessoa escolher onde construir
+      if (tutStep === 1) PADS.forEach(([px, py], i) => { if (!S.towers[i]) spots.push([px, py - 70, i]); });
+      else { const t = S.towers.find(Boolean); if (t) spots.push([t.x, t.y - artH(t) - 20, 0]); }
+      for (const [tx, ty, i] of spots) {
+        // a seta sempre se mexe (é ela que chama a atenção); com "reduzir movimento" ligado, só balança menos
+        const bob = Math.sin(S.time * 6 + i * 0.9) * (reduceMotion ? 7 : 12);
+        ctx.save();
+        ctx.translate(tx, ty - bob);
+        ctx.fillStyle = '#FFC93C'; ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 6; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-30, -36); ctx.lineTo(-13, -36); ctx.lineTo(-13, -76); ctx.lineTo(13, -76); ctx.lineTo(13, -36); ctx.lineTo(30, -36); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // tiros
+    for (const s of S.shots) drawShot(s);
+
+    // efeitos no ar
+    for (const f of S.effects) {
+      if (f.kind === 'zap') {
+        const a = Math.max(0, 1 - f.t / 0.22);
+        if (a <= 0) continue;
+        ctx.save();
+        ctx.globalAlpha = a; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        const pts = []; const n = 7;
+        for (let i = 0; i <= n; i++) {
+          const k = i / n, jit = (i === 0 || i === n) ? 0 : (Math.sin(f.seed + i * 12.9 + f.t * 90) * 18);
+          pts.push([f.x0 + (f.x1 - f.x0) * k + jit, f.y0 + (f.y1 - f.y0) * k + jit * 0.4]);
+        }
+        for (const [w, c] of [[14, 'rgba(155, 124, 255, 0.45)'], [5, '#F1EAFF']]) {
+          ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath();
+          pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+        }
+        ctx.restore();
+      } else if (f.kind === 'rain') {
+        const k = f.t / 1.1, a = Math.max(0, 1 - Math.max(0, k - 0.7) / 0.3);
+        ctx.save();
+        ctx.globalAlpha = a * 0.9;
+        ctx.strokeStyle = 'rgba(255, 244, 220, 0.9)'; ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
+        ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r / 1.25, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        for (let i = 0; i < 26; i++) {
+          const rx = Math.sin(f.seed + i * 12.9898) * 0.5 + 0.5, ry = Math.sin(f.seed + i * 78.233) * 0.5 + 0.5;
+          const ang = rx * Math.PI * 2, rad = Math.sqrt(ry) * f.r * 0.9;
+          const gx = f.x + Math.cos(ang) * rad, gy = f.y + Math.sin(ang) * rad / 1.25;
+          const phase = ((f.t * 2.2) + i * 0.13) % 1;
+          if (f.t > 0.85) continue;
+          const ay = gy - 220 * (1 - phase);
+          ctx.strokeStyle = '#6B4423'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(gx + 10, ay - 30); ctx.lineTo(gx, ay); ctx.stroke();
+          ctx.fillStyle = '#D9D9D9'; ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(gx - 3, ay + 9); ctx.lineTo(gx - 5, ay - 3); ctx.lineTo(gx + 5, ay); ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+        ctx.restore();
+      } else if (f.kind === 'levelup') {
+        const k = f.t / 1.1, a = Math.max(0, 1 - k);
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.strokeStyle = '#FFD95A'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.ellipse(f.x, f.y, 50 + 70 * k, 20 + 28 * k, 0, 0, Math.PI * 2); ctx.stroke();
+        for (let i = 0; i < 8; i++) {
+          const ang = i * Math.PI / 4 + f.t * 2;
+          drawStar(f.x + Math.cos(ang) * (40 + 30 * k), f.y - f.h * 0.5 * k - 20 + Math.sin(ang) * 18, 7);
+        }
+        ctx.restore();
+      } else if (f.kind === 'splash') {
+        // água batendo no fogo: o respingo pintado cresce rápido e some, e sobe vapor branco
+        const SP = IMG.fx_splash, k = Math.min(1, f.t / 0.45), a = Math.max(0, 1 - Math.max(0, f.t - 0.15) / 0.4);
+        ctx.save();
+        for (let i = 0; i < 6; i++) {
+          const ph = Math.min(1, f.t / 0.9), vx = f.x + (i - 2.5) * 16 + Math.sin(i * 2 + f.t * 3) * 6, vy = f.y - 30 - ph * (70 + i * 8), r = 12 + ph * 22;
+          ctx.fillStyle = 'rgba(245, 250, 255, ' + (0.7 * (1 - ph)) + ')'; ctx.beginPath(); ctx.arc(vx, vy, r, 0, Math.PI * 2); ctx.fill();
+        }
+        if (ready(SP)) {
+          const sc2 = 0.45 + 0.75 * (1 - Math.pow(1 - k, 3)), sw = 150 * sc2, sh = sw * SP.naturalHeight / SP.naturalWidth;
+          ctx.globalAlpha = a; ctx.drawImage(SP, f.x - sw / 2, f.y - sh * 0.55, sw, sh);
+        }
+        ctx.restore();
+      } else if (f.kind === 'hit' || f.kind === 'frost') {
+        const a = Math.max(0, 1 - f.t / 0.3);
+        if (a <= 0) continue;
+        ctx.save(); ctx.globalAlpha = a;
+        ctx.strokeStyle = f.kind === 'frost' ? '#C9F2FF' : '#FFF4DC'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        const r = 8 + f.t * 60;
+        for (let i = 0; i < 6; i++) { const ang = i * Math.PI / 3; ctx.beginPath(); ctx.moveTo(f.x + Math.cos(ang) * r * 0.4, f.y + Math.sin(ang) * r * 0.4); ctx.lineTo(f.x + Math.cos(ang) * r, f.y + Math.sin(ang) * r); ctx.stroke(); }
+        ctx.restore();
+      } else if (f.kind === 'float' || f.kind === 'comic') {
+        const a = Math.max(0, 1 - f.t / 1.1);
+        ctx.save(); ctx.globalAlpha = a;
+        const size = f.kind === 'comic' ? 34 : (f.big ? 40 : 28);
+        ctx.font = size + 'px "Lilita One", sans-serif'; ctx.textAlign = 'center';
+        const y = f.y - f.t * (f.kind === 'comic' ? 20 : 55);
+        ctx.translate(f.x, y);
+        if (f.kind === 'comic') { const pop = Math.min(1, f.t / 0.12); ctx.scale(0.6 + 0.4 * pop, 0.6 + 0.4 * pop); ctx.rotate(-0.12); }
+        ctx.lineWidth = 8; ctx.strokeStyle = '#2B1E14'; ctx.fillStyle = f.color;
+        ctx.strokeText(f.text, 0, 0); ctx.fillText(f.text, 0, 0);
+        ctx.restore();
+      }
+    }
+    drawVolcanoFx();
+    drawStorm();
+  }
+
+  // tamanho de desenho da torre no nível atual: a mesma escala da imagem do nível 1, para os níveis manterem a proporção entre si
+  function towerArt(t) {
+    const T = t.T, base = IMG[T.img], key = (LEVEL_ART[t.key] || [])[t.level - 1];
+    let im = key && ready(IMG[key]) ? IMG[key] : base;
+    if (!ready(im)) return null;
+    const k = ready(base) ? T.h / base.naturalHeight : 1;
+    const size = LV.size[t.level - 1];
+    return { im, w: im.naturalWidth * k * size, h: im.naturalHeight * k * size };
+  }
+  const artH = t => { const a = towerArt(t); return a ? a.h : t.T.h; };
+  const artW = t => { const a = towerArt(t); return a ? a.w : t.T.w; };
+  function drawTower(t) {
+    const art = towerArt(t);
+    if (!art) return;
+    const im = art.im;
+    const grow = Math.min(1, t.built / 0.25);
+    const ease = 1 - Math.pow(1 - grow, 3);
+    const kick = t.recoil * 0.04;
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    ctx.scale((0.6 + 0.4 * ease) * (1 + kick), (0.6 + 0.4 * ease) * (1 - kick));
+    ctx.drawImage(im, -art.w / 2, -art.h, art.w, art.h);
+    ctx.restore();
+    // estrelas de nível na base
+    for (let i = 0; i < t.level; i++) drawStar(t.x + (i - (t.level - 1) / 2) * 26, t.y + 14, 11);
+    if (t.frozen > 0) drawFrozen(t);
+    if (t.burn > 0) drawBurn(t);
+  }
+  function drawStar(cx, cy, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const ang = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+      ctx.lineTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#FFC93C'; ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 3;
+    ctx.fill(); ctx.stroke();
+  }
+
+  function drawEnemy(e) {
+    const T = e.T, im = IMG[T.img];
+    const s = Math.sin(e.phase), c = Math.cos(e.phase);
+    let hop = 0, sxScale = 1, syScale = 1, tilt = 0, sway = 0;
+    if (T.style === 'waddle') {
+      hop = Math.abs(s) * 7; tilt = s * 0.13; sway = s * 2.5;
+      const land = Math.pow(1 - Math.abs(s), 6);
+      syScale = 1 - 0.06 * land; sxScale = 1 + 0.06 * land;
+    } else if (T.style === 'gallop') {
+      hop = Math.max(0, s) * 16; sxScale = 1 + 0.11 * s; syScale = 1 - 0.08 * s;
+      tilt = e.face * (0.06 + 0.09 * c);
+    } else if (T.style === 'stomp') {
+      hop = Math.abs(s) * 5;
+      const land = Math.pow(1 - Math.abs(s), 8);
+      syScale = 1 - 0.08 * land; sxScale = 1 + 0.07 * land; tilt = s * 0.045;
+    } else if (T.style === 'flap') {
+      // bate as asas: sobe e desce no ar e "espreme" a cada batida
+      hop = s * 9;
+      syScale = 1 - 0.14 * Math.abs(c); sxScale = 1 + 0.05 * Math.abs(c);
+      tilt = e.face * 0.08;
+    } else if (T.style === 'march') {
+      // marcha pesada de armadura
+      hop = Math.abs(s) * 4; tilt = s * 0.05;
+      const land = Math.pow(1 - Math.abs(s), 6);
+      syScale = 1 - 0.05 * land; sxScale = 1 + 0.04 * land;
+    }
+    if (e.onIce) {
+      // deslizando: sem pulinho, inclinado pra frente, com risquinhos de gelo atrás
+      hop = 0; sxScale = 1; syScale = 1; tilt = e.face * 0.16; sway = 0;
+      ctx.save(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for (let k = 0; k < 3; k++) { const yy = e.y - 4 - k * 9, xx = e.x - e.face * (T.w * 0.3 + k * 6); ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx - e.face * (18 + k * 6), yy); ctx.stroke(); }
+      ctx.restore();
+    }
+    if (e.emerge > 0) { const k = e.emerge / 0.9; ctx.save(); ctx.globalAlpha = 1 - k * 0.8; ctx.translate(0, k * T.h * 0.6); }
+    const lift = e.alt;
+    ctx.fillStyle = 'rgba(40, 28, 10, ' + (lift ? 0.22 : 0.35) + ')';
+    const sh = lift ? 0.6 : (1 - Math.max(0, hop) / 50);
+    ctx.beginPath(); ctx.ellipse(e.x, e.y, T.w * 0.36 * sh, T.w * 0.11 * sh, 0, 0, Math.PI * 2); ctx.fill();
+    hop += lift;
+    if (ready(im)) {
+      ctx.save();
+      ctx.translate(e.x + sway + e.face * e.lunge * 12, e.y - hop);
+      ctx.rotate(tilt);
+      ctx.scale(e.face * sxScale, syScale);
+      ctx.drawImage(im, -T.w / 2, -T.h, T.w, T.h);
+      if (e.flash > 0) { ctx.globalAlpha = 0.55; ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(im, -T.w / 2, -T.h, T.w, T.h); }
+      ctx.restore();
+    }
+    if (e.slowFactor < 1) {
+      ctx.save(); ctx.fillStyle = 'rgba(160, 225, 255, 0.85)'; ctx.strokeStyle = '#2B6E8F'; ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        const ang = S.time * 2 + i * 2.1, rx = e.x + Math.cos(ang) * T.w * 0.4, ry = e.y - e.alt - T.h * 0.45 + Math.sin(ang) * 10;
+        ctx.beginPath(); ctx.moveTo(rx, ry - 8); ctx.lineTo(rx + 5, ry); ctx.lineTo(rx, ry + 8); ctx.lineTo(rx - 5, ry); ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    const bw = T.boss ? 120 : 54, bh = T.boss ? 12 : 9;
+    const bx = e.x - bw / 2, by = e.y - T.h - hop - (T.boss ? 26 : 18);
+    ctx.fillStyle = '#2B1E14'; roundRect(bx - 3, by - 3, bw + 6, bh + 6, (bh + 6) / 2); ctx.fill();
+    const frac = Math.max(0, e.hp / e.maxHp);
+    ctx.fillStyle = frac > 0.5 ? '#7BE05A' : frac > 0.25 ? '#FFC93C' : '#FF5A4A';
+    roundRect(bx, by, bw * frac, bh, bh / 2); ctx.fill();
+    if (T.boss) {
+      ctx.fillStyle = '#FFC93C'; ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 3;
+      const cx = bx - 10, cy = by + bh / 2;
+      ctx.beginPath(); ctx.moveTo(cx - 14, cy + 9); ctx.lineTo(cx - 14, cy - 5); ctx.lineTo(cx - 7, cy + 2); ctx.lineTo(cx, cy - 9); ctx.lineTo(cx + 7, cy + 2); ctx.lineTo(cx + 14, cy - 5); ctx.lineTo(cx + 14, cy + 9); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+    if (e.emerge > 0) ctx.restore();
+  }
+
+  function drawSoldier(s, alpha = 1) {
+    const im = IMG[SOLDIER.img];
+    ctx.save(); ctx.globalAlpha = alpha;
+    const st = Math.sin(s.phase);
+    const hop = s.moving ? Math.abs(st) * 6 : 0;
+    const tilt = s.moving ? st * 0.1 : 0;
+    ctx.fillStyle = 'rgba(40, 28, 10, 0.32)';
+    ctx.beginPath(); ctx.ellipse(s.x, s.y, 20, 7, 0, 0, Math.PI * 2); ctx.fill();
+    if (ready(im)) {
+      ctx.save();
+      ctx.translate(s.x + s.face * s.lunge * 10, s.y - hop);
+      ctx.rotate(tilt - s.face * s.lunge * 0.15);
+      ctx.scale(s.face, 1);
+      ctx.drawImage(im, -SOLDIER.w / 2, -SOLDIER.h, SOLDIER.w, SOLDIER.h);
+      if (s.flash > 0) { ctx.globalAlpha = 0.5; ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(im, -SOLDIER.w / 2, -SOLDIER.h, SOLDIER.w, SOLDIER.h); }
+      ctx.restore();
+    }
+    const max = s.maxHp || SOLDIER.hp[0];
+    if (s.hp < max) {
+      const bw = 40, bx = s.x - bw / 2, by = s.y - SOLDIER.h - hop - 14;
+      ctx.fillStyle = '#2B1E14'; roundRect(bx - 2, by - 2, bw + 4, 10, 5); ctx.fill();
+      ctx.fillStyle = '#5BC0EB'; roundRect(bx, by, bw * Math.max(0, s.hp / max), 6, 3); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawDeath(f) {
+    const im = IMG[f.img];
+    const k = Math.min(1, f.t / 0.45);
+    if (k < 1 && ready(im)) {
+      ctx.save();
+      ctx.globalAlpha = 1 - k;
+      ctx.translate(f.x, f.y - f.h * 0.4);
+      ctx.rotate(f.face * k * 1.4);
+      ctx.scale(f.face * (1 - 0.7 * k), 1 - 0.7 * k);
+      ctx.drawImage(im, -f.w / 2, -f.h * 0.6, f.w, f.h);
+      ctx.restore();
+    }
+    const a = Math.max(0, 1 - f.t / 0.8);
+    ctx.fillStyle = 'rgba(240, 236, 226, ' + (0.8 * a) + ')';
+    for (let i = 0; i < 5; i++) {
+      const ang = i * 1.256, r = 10 + f.t * 70;
+      ctx.beginPath(); ctx.arc(f.x + Math.cos(ang) * r, f.y - f.h * 0.35 + Math.sin(ang) * r * 0.7, 12 + f.t * 16, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function drawShot(s) {
+    ctx.save();
+    if (s.kind === 'arrow') {
+      ctx.translate(s.x, s.y); ctx.rotate(s.ang || 0);
+      ctx.strokeStyle = '#6B4423'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-24, 0); ctx.lineTo(14, 0); ctx.stroke();
+      ctx.fillStyle = '#D9D9D9'; ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(10, -6); ctx.lineTo(10, 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#F4E9CF'; ctx.beginPath(); ctx.moveTo(-24, 0); ctx.lineTo(-32, -6); ctx.lineTo(-18, 0); ctx.lineTo(-32, 6); ctx.closePath(); ctx.fill();
+    } else if (s.kind === 'shard') {
+      ctx.translate(s.x, s.y); ctx.rotate(s.ang || 0);
+      ctx.fillStyle = 'rgba(160, 225, 255, 0.35)'; ctx.beginPath(); ctx.ellipse(-12, 0, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#C9F2FF'; ctx.strokeStyle = '#1D4F73'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(0, -8); ctx.lineTo(-12, 0); ctx.lineTo(0, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if (s.kind === 'ball') {
+      const k = Math.min(1, s.t / s.flight);
+      const x = s.sx + (s.tx - s.sx) * k;
+      const y = s.sy + (s.ty - s.sy) * k - Math.sin(k * Math.PI) * 160;
+      ctx.fillStyle = '#2B2F36'; ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#8E9AA6'; ctx.beginPath(); ctx.arc(x - 4, y - 4, 4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    if (w <= 0) return;
+    r = Math.min(r, w / 2, h / 2);
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  // ---------- Toques no mapa ----------
+  cv.addEventListener('pointerdown', ev => {
+    if (S.over) return;
+    const r = cv.getBoundingClientRect();
+    const wx = (ev.clientX - r.left - offX) / scale, wy = (ev.clientY - r.top - offY) / scale;
+    if (aiming) { castAbility(aiming, wx, wy); return; }
+    if (rallyFor >= 0) {
+      const t = S.towers[rallyFor];
+      const np = nearestPathPoint(wx, wy);
+      const R = rangeOf(t);
+      if (t && np.dist < 90 && Math.hypot(np.x - t.x, (np.y - t.y) * 1.25) <= R) {
+        t.rally = { x: np.x, y: np.y };
+        releaseSoldiers(t);
+        S.effects.push({ kind: 'dust', x: np.x, y: np.y, t: 0 });
+        rallyFor = -1; closeTowerMenu();
+      } else toast('Escolha um ponto do caminho dentro do círculo de alcance.');
+      return;
+    }
+    // torre construída?
+    for (let i = 0; i < PADS.length; i++) {
+      const t = S.towers[i];
+      if (t && Math.abs(wx - t.x) < Math.min(artW(t), t.T.w * 1.2) * 0.45 && wy < t.y + 22 && wy > t.y - artH(t) - 50) {
+        if (t.frozen > 0) {
+          // picareta: cada toque racha o gelo; no terceiro ele quebra e a torre volta a atirar
+          t.picks = (t.picks || 0) + 1; t.chip = 0.25;
+          S.effects.push({ kind: 'frost', x: t.x + (Math.random() - 0.5) * 40, y: t.y - artH(t) * (0.3 + Math.random() * 0.4), t: 0 });
+          Sound.play('tink');
+          if (t.picks >= 3) { t.frozen = 0; S.effects.push({ kind: 'shatter', x: t.x, y: t.y - artH(t) * 0.5, t: 0 }); S.effects.push({ kind: 'float', x: t.x, y: t.y - artH(t) - 20, t: 0, text: 'Quebrou!', color: '#BDF0FF' }); Sound.play('shard'); }
+          return;
+        }
+        if (t.burn > 0) {
+          // balde d'água: cada toque apaga um pouco; no último toque a torre volta a atirar
+          t.taps = (t.taps || 0) + 1; t.douse = 0.6;
+          S.effects.push({ kind: 'splash', x: t.x, y: t.y - artH(t) * 0.45, t: 0 });
+          Sound.play('shard');
+          if (t.taps >= 3) { t.burn = 0; S.effects.push({ kind: 'float', x: t.x, y: t.y - artH(t) - 20, t: 0, text: 'Apagado!', color: '#9BE3FF' }); }
+          return;
+        }
+        if (S.selected === i) closeTowerMenu(); else openTowerMenu(i);
+        return;
+      }
+    }
+    // terreno vazio?
+    for (let i = 0; i < PADS.length; i++) {
+      const [px, py] = PADS[i];
+      if (!S.towers[i] && Math.hypot((wx - px) / 1.3, wy - py) < 70) { if (menuPad === i) closeMenu(); else openMenu(i); return; }
+    }
+    closeMenu(); closeTowerMenu();
+  });
+
+  // ---------- Botões ----------
+  btnCall.addEventListener('click', startWave);
+  $('speed').addEventListener('click', () => { speed = speed === 1 ? 2 : 1; $('speed').textContent = speed + 'x'; });
+  function pauseGame() { if (S.over || inMenu) return; paused = true; $('pauseOverlay').hidden = false; Sound.duck(true); }
+  $('pause').addEventListener('click', () => { Sound.play('click'); pauseGame(); });
+  $('resume').addEventListener('click', () => { Sound.play('click'); paused = false; $('pauseOverlay').hidden = true; Sound.duck(false); });
+  // ---------- Tutorial (só na primeira partida) ----------
+  let tutStep = -1, tutActive = false;
+  const elTip = $('tip');
+  const TUT = {
+    1: ['Passo 1 de 3', 'Toque num terreno de pedra marcado com seta. Depois toque numa torre para ver o alcance dela, e toque de novo para construir.'],
+    2: ['Passo 2 de 3', 'Boa! Agora toque no botão Chamar onda para os inimigos virem.'],
+    3: ['Passo 3 de 3', '']
+  };
+  // o cartão aparece no começo de cada passo; depois de "Entendi" só a seta e o botão pulsando ficam na tela
+  function setTut(n) {
+    tutStep = n;
+    if (n < 0) tutActive = false;
+    btnCall.classList.toggle('pulse', n === 2);
+    if (TUT[n]) {
+      $('tipStep').textContent = TUT[n][0]; $('tipText').textContent = TUT[n][1]; $('tipSkip').hidden = false;
+      elTip.hidden = false; tutPaused = true;
+    } else { elTip.hidden = true; tutPaused = false; }
+    if (S) updateHUD();
+  }
+  let tutPaused = false;
+  function infoCard(label, text) {
+    $('tipStep').textContent = label; $('tipText').textContent = text; $('tipSkip').hidden = true;
+    elTip.hidden = false; tutPaused = true;
+  }
+  $('tipOk').addEventListener('click', () => {
+    Sound.play('click'); elTip.hidden = true; tutPaused = false;
+    if (tutStep === 3) { save.tut = true; persist(); setTut(-1); toast('Pronto! Agora é com você. Boa defesa!', 3); }
+  });
+  $('tipSkip').addEventListener('click', () => { Sound.play('click'); save.tut = true; persist(); setTut(-1); }); 
+
+  function newGame(isEndless, mapIndex) {
+    closeMenu(); closeTowerMenu();
+    endless = !!isEndless;
+    if (mapIndex !== undefined) loadMap(mapIndex);
+    $('camp').hidden = true;
+    S = newState(); S.startBest = endless ? MS().bestEndless : MS().best; shownCoins = -1;
+    btnCall.dataset.label = ''; elPreview.dataset.n = ''; setAiming(null);
+    paused = false; inMenu = false;
+    $('endOverlay').hidden = true; $('pauseOverlay').hidden = true; $('start').hidden = true;
+    document.querySelector('.hud-top').hidden = false; document.querySelector('.hud-bottom').hidden = false;
+    Sound.duck(false);
+    updateHUD();
+    if (!save.tut && MAP === MAPS[0]) { tutActive = true; setTut(1); }
+    else if (MAP.intro && !save.seenMaps[MAP.id]) { setTut(-1); save.seenMaps[MAP.id] = true; persist(); infoCard(MAP.name, MAP.intro); }
+    else { setTut(-1); toast(endless ? 'Modo infinito: aguente o máximo de ondas que conseguir!' : 'Construa suas torres e chame a primeira onda', 3.5); }
+  }
+  function showMenu() {
+    closeMenu(); closeTowerMenu();
+    inMenu = true; paused = false;
+    S = newState();
+    $('endOverlay').hidden = true; $('pauseOverlay').hidden = true; $('start').hidden = false; $('camp').hidden = true;
+    document.querySelector('.hud-top').hidden = true; document.querySelector('.hud-bottom').hidden = true;
+    setTut(-1); setAiming(null); elAbil.hidden = true;
+    $('starsTotal').textContent = totalStars() + '/' + MAPS.length * 3;
+    $('mapsWon').textContent = MAPS.filter(m => mapSave(m.id).stars > 0).length + '/' + MAPS.length;
+    Sound.duck(false);
+  }
+  $('play').addEventListener('click', () => { Sound.init(); Sound.play('click'); campSel = -1; showCamp('camp'); });
+  $('playEndless').addEventListener('click', () => { Sound.init(); Sound.play('click'); campSel = -1; showCamp('inf'); });
+  $('replayTut').addEventListener('click', () => { Sound.init(); Sound.play('click'); save.tut = false; persist(); newGame(false, 0); });
+  $('restart').addEventListener('click', () => { Sound.init(); Sound.play('click'); newGame(endless); });
+  $('toMenu').addEventListener('click', () => { Sound.play('click'); showCamp(endless ? 'inf' : 'camp'); });
+  $('toMenu2').addEventListener('click', () => { Sound.play('click'); showCamp(endless ? 'inf' : 'camp'); });
+
+  // ---------- Campanha: escolher a fase ----------
+  const totalStars = () => MAPS.reduce((a, m) => a + (mapSave(m.id).stars || 0), 0);
+  const STAGE_POS = [[27, 80], [70, 57], [27, 35], [70, 13]]; // posição de cada fase na tela, em %
+  const STAR = on => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="' + (on ? '#FFC93C' : '#CDBB98') + '" stroke="#2B1E14" stroke-width="2" stroke-linejoin="round"/></svg>';
+  const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" fill="#FFC93C" stroke="#2B1E14" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#2B1E14" stroke-width="2.5"/><circle cx="12" cy="15" r="1.6" fill="#2B1E14"/></svg>';
+  const LOCKED_BG = { gelo: 'linear-gradient(#cfe4f2,#8fb6d2)', vulcao: 'linear-gradient(#7a4a3a,#3a2622)' };
+  let campSel = -1, campMode = 'camp';
+  // no modo infinito, um mapa só libera depois de vencido na campanha
+  const stageOk = i => campMode === 'inf' ? mapPlayable(i) && (TEST_UNLOCK_ALL || mapSave(MAPS[i].id).stars > 0) : mapPlayable(i);
+  function showCamp(mode) {
+    if (mode && mode !== campMode) { campMode = mode; campSel = -1; }
+    const inf = campMode === 'inf';
+    $('campTitle').textContent = inf ? 'Modo infinito' : 'Campanha';
+    $('campTotal').classList.toggle('off', inf);
+    $('campHint').textContent = inf ? 'Escolha um mapa e aguente o máximo de ondas' : 'Toque numa fase para ver o desafio e jogar';
+    closeMenu(); closeTowerMenu();
+    inMenu = true; paused = false;
+    S = newState();
+    $('endOverlay').hidden = true; $('pauseOverlay').hidden = true; $('start').hidden = true; $('camp').hidden = false;
+    document.querySelector('.hud-top').hidden = true; document.querySelector('.hud-bottom').hidden = true;
+    setTut(-1); setAiming(null); elAbil.hidden = true;
+    Sound.duck(false);
+    $('campStars').textContent = totalStars() + '/' + MAPS.length * 3;
+    const next = inf ? -1 : MAPS.findIndex((m, i) => mapPlayable(i) && !mapSave(m.id).stars);
+    const trail = STAGE_POS.map(([x, y]) => x + ',' + y).join(' ');
+    $('campTrail').innerHTML = '<polyline points="' + trail + '" fill="none" stroke="#7A5634" stroke-width="5" stroke-dasharray="2 12" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+    $('campStages').innerHTML = MAPS.map((m, i) => {
+      const ok = stageOk(i), st = mapSave(m.id).stars || 0, rec = mapSave(m.id).bestEndless || 0;
+      const bg = m.img ? 'background-image:url(' + files[m.img] + ')' : 'background:' + LOCKED_BG[m.id];
+      return '<button class="stage' + (ok ? '' : ' locked') + (i === campSel ? ' sel' : '') + '" data-i="' + i + '" type="button" style="left:' + STAGE_POS[i][0] + '%;top:' + STAGE_POS[i][1] + '%" aria-label="' + m.name + (!ok ? ', bloqueada' : inf ? (rec ? ', recorde onda ' + rec : ', ainda não jogado') : ', ' + st + ' de 3 estrelas') + '">'
+        + '<span class="med"><span class="core" style="' + bg + '"></span>' + (ok ? '' : '<span class="lock">' + LOCK + '</span>')
+        + (i === next ? '<svg class="flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2 V22" stroke="#2B1E14" stroke-width="4" stroke-linecap="round"/><path d="M5 2 V22" stroke="#8A5230" stroke-width="2" stroke-linecap="round"/><path d="M6 3 H20 L16 8 L20 13 H6 Z" fill="#E04848" stroke="#2B1E14" stroke-width="2" stroke-linejoin="round"/></svg>' : '') + '</span>'
+        + '<span class="rib">' + m.name + '</span>'
+        + (!ok ? '' : inf ? '<span class="rec">' + (rec ? 'Onda ' + rec : 'Novo') + '</span>' : '<span class="st">' + [0, 1, 2].map(k => STAR(k < st)).join('') + '</span>') + '</button>';
+    }).join('');
+    if (campSel >= 0) openStage(campSel); else $('campSheet').hidden = true;
+  }
+  function openStage(i) {
+    campSel = i;
+    document.querySelectorAll('#campStages .stage').forEach(b => b.classList.toggle('sel', +b.dataset.i === i));
+    const m = MAPS[i], ms = mapSave(m.id), ok = stageOk(i), inf = campMode === 'inf';
+    $('csName').textContent = m.name;
+    $('csThumb').style.cssText = m.img ? 'background-image:url(' + files[m.img] + ')' : 'background:' + LOCKED_BG[m.id];
+    const art = n => (MAPS[n].id === 'floresta' ? 'a ' : 'o ') + MAPS[n].name;
+    $('csDesc').textContent = ok ? (inf ? 'Ondas sem fim, cada vez mais fortes. ' : '') + m.desc
+      : !m.img ? 'Em breve: este mapa ainda está sendo desenhado.'
+      : inf ? 'Vença ' + art(i) + ' na campanha para liberar o modo infinito aqui.'
+      : 'Vença ' + art(i - 1) + ' na campanha para liberar ' + (inf ? 'este mapa.' : 'esta fase.');
+    $('csMeta').hidden = !ok; $('csBtns').hidden = !ok;
+    $('csMetaLbl').textContent = inf ? 'Seu recorde:' : 'Suas estrelas:';
+    $('csMetaVal').textContent = inf ? (ms.bestEndless ? 'onda ' + ms.bestEndless : 'ainda não jogou') : (ms.stars || 0) + ' de 3';
+    $('campSheet').hidden = false;
+  }
+  $('campStages').addEventListener('click', ev => {
+    const b = ev.target.closest('.stage'); if (!b) return;
+    Sound.play('click'); openStage(+b.dataset.i);
+  });
+  $('camp').addEventListener('click', ev => {
+    if (ev.target === $('camp') || ev.target.id === 'campStages' || ev.target.id === 'campTrail') { campSel = -1; $('campSheet').hidden = true; document.querySelectorAll('#campStages .stage').forEach(b => b.classList.remove('sel')); }
+  });
+  $('csPlay').addEventListener('click', () => { Sound.init(); Sound.play('click'); newGame(campMode === 'inf', campSel); });
+  $('campBack').addEventListener('click', () => { Sound.play('click'); campSel = -1; showMenu(); });
+
+  function syncToggles() {
+    for (const id of ['sfxToggle', 'sfxToggle2']) $(id).setAttribute('aria-pressed', String(save.sfx));
+    for (const id of ['vibToggle', 'vibToggle2']) $(id).setAttribute('aria-pressed', String(save.vib));
+    for (const id of ['musToggle', 'musToggle2']) $(id).setAttribute('aria-pressed', String(save.music));
+  }
+  for (const id of ['vibToggle', 'vibToggle2']) $(id).addEventListener('click', () => { save.vib = !save.vib; persist(); syncToggles(); Sound.play('click'); if (save.vib) buzz(40); });
+  for (const id of ['sfxToggle', 'sfxToggle2']) $(id).addEventListener('click', () => { Sound.init(); Sound.setSfx(!save.sfx); syncToggles(); Sound.play('click'); });
+  for (const id of ['musToggle', 'musToggle2']) $(id).addEventListener('click', () => { Sound.init(); Sound.setMusic(!save.music); syncToggles(); Sound.play('click'); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (S.waveActive && !S.over) pauseGame(); Sound.suspend(); }
+    else Sound.resume();
+  });
+
+  // ---------- Laço principal ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    // agenda o próximo quadro antes de tudo: um erro num quadro nunca congela o jogo
+    requestAnimationFrame(frame);
+    try {
+      if (!paused && !S.over && !inMenu && !tutPaused) update(dt * speed);
+      else S.time += dt;
+      draw();
+    } catch (err) {
+      if (!frame.warned) { frame.warned = true; console.error(err); }
+    }
+  }
+
+  S = newState();
+  resize();
+  updateHUD();
+  syncToggles();
+  showMenu();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
