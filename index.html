@@ -27,6 +27,7 @@ html, body { height: 100%; }
 body { margin: 0; background: var(--grass); color: var(--cream); font-family: var(--body); overflow: hidden; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 #game { position: fixed; inset: 0; }
 canvas { display: block; width: 100%; height: 100%; }
+#cv { touch-action: none; }
 .hud-top { position: fixed; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px 0; display: flex; align-items: flex-start; gap: 8px; pointer-events: none; }
 .plaque { display: flex; align-items: center; gap: 10px; background: var(--wood); border: 3px solid var(--ink); border-radius: 10px; box-shadow: inset 0 0 0 2px var(--wood-hi), 0 3px 0 var(--ink); padding: 6px 10px; font-family: var(--display); font-size: 16px; color: var(--cream); pointer-events: auto; font-variant-numeric: tabular-nums; }
 .plaque span { display: flex; align-items: center; gap: 5px; }
@@ -96,6 +97,35 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .tip .skip { background: none; border: none; color: #6B5236; font-family: var(--body); font-weight: 900; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
 
 /* habilidades especiais */
+/* avisos: anúncios grandes no meio da tela e avisos discretos embaixo, sem caixa */
+.toast { left: 16px !important; right: 16px; transform: none !important; width: auto !important; max-width: none !important; top: auto !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 178px); background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; text-align: center; font: 900 16px/1.3 var(--body) !important; color: #FFF4DC !important; text-shadow: 0 0 2px #2B1E14, 0 0 2px #2B1E14, 0 0 3px #2B1E14, 0 2px 6px rgba(0, 0, 0, .8); z-index: 6; }
+.annc { position: fixed; left: 0; right: 0; top: 36%; text-align: center; pointer-events: none; z-index: 6; opacity: 0; }
+.annc b { display: block; font: 400 66px/1 var(--display); color: #FFF4DC; -webkit-text-stroke: 6px #2B1E14; paint-order: stroke fill; text-shadow: 0 8px 22px rgba(0, 0, 0, .55); }
+.annc span { display: block; margin-top: 10px; padding: 0 16px; font: 400 26px/1.1 var(--display); color: #FFD95A; -webkit-text-stroke: 4px #2B1E14; paint-order: stroke fill; text-shadow: 0 4px 12px rgba(0, 0, 0, .5); }
+.annc span:empty { display: none; }
+.annc.small b { font-size: 44px; }
+.annc.fury b { color: #FF7A4A; } .annc.fury span { color: #FFE2B0; }
+.annc.show { animation: anncIn 2.6s ease-out both; }
+@keyframes anncIn { 0% { opacity: 0; transform: scale(.82); } 12% { opacity: 1; transform: scale(1.04); } 20% { transform: scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { @keyframes anncIn { 0% { opacity: 0; } 10%, 75% { opacity: 1; } 100% { opacity: 0; } } }
+.tbtn.up.confirm { background: #7FD36A !important; }
+body.duel .toast { top: auto !important; }
+/* fase noturna: botão da tocha */
+.ability.torch { position: fixed; left: 24px; bottom: calc(env(safe-area-inset-bottom, 0px) + 218px); z-index: 3; }
+.ability.torch .core { background: radial-gradient(circle at 50% 40%, #FFD27A, #B8641E 75%); display: flex; align-items: center; justify-content: center; }
+.ability.torch .core img { height: 82%; width: auto; }
+.ability.torch.aiming { outline: 4px solid var(--gold); outline-offset: 3px; }
+.ability.torch.empty .core { filter: grayscale(1) brightness(.6); }
+.tcount { position: absolute; right: -6px; top: -6px; min-width: 24px; height: 24px; border-radius: 12px; background: var(--gold); border: 2px solid var(--ink); font: 400 15px/20px var(--display); color: var(--ink); text-align: center; }
+/* duelo: barra de vida do chefão */
+body.duel .toast { top: calc(env(safe-area-inset-top, 0px) + 124px); }
+.boss-bar { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 64px); width: min(92vw, 420px); z-index: 3; display: flex; align-items: center; gap: 8px; background: rgba(43, 30, 20, .9); border: 3px solid var(--gold); border-radius: 14px; padding: 4px 10px 6px 4px; pointer-events: none; }
+.boss-bar img { width: 40px; height: 40px; object-fit: contain; }
+.boss-bar .bb { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.boss-bar b { font: 400 15px/1 var(--display); color: var(--gold); }
+.boss-bar .bt { position: relative; height: 14px; border-radius: 7px; background: #4A1414; border: 2px solid var(--ink); overflow: hidden; }
+.boss-bar .bf { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(#FF6A5A, #C8302A); transition: width .2s; }
+.boss-bar .bt i { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); }
 .abilities { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); display: flex; flex-direction: row; justify-content: space-between; padding: 0 24px; pointer-events: none; }
 .abilities .ability { pointer-events: auto; }
 /* com as habilidades nos cantos de baixo, o quadro da próxima onda sobe para nunca encostar nelas */
@@ -126,9 +156,68 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .camp-total { display: flex; align-items: center; gap: 5px; background: var(--wood); border: 3px solid var(--ink); border-radius: 12px; box-shadow: inset 0 0 0 2px var(--wood-hi), 0 3px 0 var(--ink); color: var(--cream); font-family: var(--display); font-size: 16px; padding: 8px 10px; font-variant-numeric: tabular-nums; }
 .camp-total b { font-weight: 400; }
 .camp-hint { position: relative; margin: 8px 0 0; text-align: center; font-weight: 900; font-size: 13px; color: #6B5236; }
-.camp-area { position: relative; flex: 1; margin-bottom: 205px; width: 100%; max-width: 420px; align-self: center; min-height: 0; }
-#campTrail { position: absolute; inset: 0; width: 100%; height: 100%; }
+.camp { padding: 0 !important; background: #1a140e !important; }
+.camp::before { display: none; }
+.camp-top { position: absolute !important; left: 0; right: 0; top: 0; z-index: 3; padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px 30px; background: linear-gradient(rgba(43, 30, 20, .92), rgba(43, 30, 20, .6) 70%, transparent); }
+.camp-hint { position: absolute !important; z-index: 4; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 64px); margin: 0 !important; color: var(--cream) !important; text-shadow: 0 1px 3px #000; pointer-events: none; }
+.camp-area { position: absolute; inset: 0; overflow: hidden; touch-action: none; cursor: grab; }
+#campWorld { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,.6); }
+#campSegs img { display: block; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.camp-fog { position: absolute; left: -30px; right: -30px; height: 120px; pointer-events: none; filter: blur(6px); background: radial-gradient(ellipse 35% 45% at 15% 50%, rgba(255,255,255,.85), transparent), radial-gradient(ellipse 30% 40% at 50% 45%, rgba(255,255,255,.75), transparent), radial-gradient(ellipse 35% 45% at 85% 55%, rgba(255,255,255,.85), transparent), linear-gradient(transparent, rgba(245,245,250,.55) 45%, rgba(245,245,250,.55) 55%, transparent); }
+.drag-hint { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 26px); transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 8px; white-space: nowrap; background: rgba(43, 30, 20, .88); color: var(--cream); border: 3px solid var(--gold); border-radius: 999px; padding: 6px 14px; font: 900 13px var(--body); box-shadow: 0 3px 0 var(--ink); pointer-events: none; animation: hintBob 1.2s ease-in-out infinite; }
+.drag-hint .chev { color: var(--gold); font-size: 14px; }
+@keyframes hintBob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -7px); } }
+.zoom-btns { position: absolute; right: 10px; top: calc(env(safe-area-inset-top, 0px) + 96px); z-index: 4; display: flex; flex-direction: column; gap: 8px; }
+.zoom-btns button { width: 42px; height: 42px; border-radius: 12px; background: var(--wood); border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px var(--wood-hi), 0 3px 0 var(--ink); color: var(--cream); font: 900 24px/1 var(--body); cursor: pointer; }
 #campStages { position: absolute; inset: 0; }
+/* no mapa do reino os medalhões ficam no tamanho do mapa (crescem e diminuem com o zoom) */
+#campStages .stage { transform: translate(-50%, -50%) scale(1.25); }
+/* dentro de uma região: bandeirinhas numeradas das fases */
+#campStages .trail { position: absolute; left: 0; top: 0; pointer-events: none; }
+#campStages .trail circle { fill: #F7ECD2; stroke: #2B1E14; stroke-width: 1; }
+.pf { position: absolute; transform: translate(-50%, -100%); transform-origin: 50% 100%; background: none; border: 0; padding: 0; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.pf .fgw { position: relative; display: block; height: 70px; }
+.pf .fgw img { height: 100%; width: auto; display: block; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .45)); }
+.pf .num { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font: 400 18px/1 var(--display); color: #FFF4DC; -webkit-text-stroke: 3.5px #2B1E14; paint-order: stroke fill; }
+.pf.locked .num { color: #E4E4E4; }
+.pf .lk { position: absolute; left: 50%; top: 52%; transform: translateX(-50%); width: 13px; height: 13px; }
+.pf .lk svg { width: 100%; height: 100%; display: block; }
+.pf .plq { display: flex; gap: 0; margin-top: -4px; padding: 1px 3px; background: linear-gradient(#A8744A, #6E4626); border: 1.5px solid var(--ink); border-radius: 4px; box-shadow: 0 1px 0 var(--ink); }
+.pf .plq svg { width: 8px; height: 8px; display: block; }
+.pf .rec { margin-top: -4px; background: var(--wood); color: var(--cream); border: 1.5px solid var(--ink); border-radius: 4px; padding: 0 4px; font: 400 8px/11px var(--display); white-space: nowrap; }
+.pf.next .fgw { animation: pfBob 1.3s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes pfBob { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+.pf.sel .fgw img, .pf.sel .bossw img { filter: drop-shadow(0 0 3px #FFC93C) drop-shadow(0 0 4px #FFC93C); }
+/* fase do chefão: o próprio chefão em miniatura no mapa */
+.pf .bossw { position: relative; display: block; height: 84px; }
+.pf .bossw img { height: 100%; width: auto; display: block; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .5)); }
+.pf.boss:not(.locked):not(.won) .bossw img { animation: bossGlow 1.6s ease-in-out infinite; }
+@keyframes bossGlow { 0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 60, 40, .6)) drop-shadow(0 2px 2px rgba(0, 0, 0, .5)); } 50% { filter: drop-shadow(0 0 8px rgba(255, 60, 40, 1)) drop-shadow(0 0 4px rgba(255, 90, 40, .9)); } }
+.pf.boss.locked .bossw img { filter: brightness(0) drop-shadow(0 0 2px rgba(255, 255, 255, .35)); opacity: .75; }
+.pf.boss .lk { top: 45%; width: 16px; height: 16px; }
+.rgn .rs { display: flex; align-items: center; gap: 4px; }
+.rgn .rs svg { width: 26px; height: 26px; }
+.rgn .rs b { font: 400 22px/1 var(--display); color: #FFF4DC; -webkit-text-stroke: 4px #3C230F; paint-order: stroke fill; }
+/* regiões futuras */
+.future { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.future .cloud { position: absolute; left: 50%; top: 50%; width: 230px; height: 140px; transform: translate(-50%, -50%); filter: blur(4px); background: radial-gradient(ellipse 32% 42% at 25% 55%, rgba(240,243,250,.95) 60%, transparent 62%), radial-gradient(ellipse 30% 45% at 50% 40%, rgba(240,243,250,.95) 60%, transparent 62%), radial-gradient(ellipse 32% 42% at 75% 58%, rgba(240,243,250,.95) 60%, transparent 62%), radial-gradient(ellipse 45% 30% at 50% 70%, rgba(240,243,250,.95) 60%, transparent 62%); }
+.future .fl { position: relative; width: 44px; height: 44px; }
+.future .fl svg { width: 100%; height: 100%; }
+.future .fn { position: relative; font: italic 700 30px/1.1 Georgia, 'Times New Roman', serif; color: #EEF1F7; -webkit-text-stroke: 6px #3C230F; paint-order: stroke fill; white-space: nowrap; }
+.camp-area { background: linear-gradient(#8ccdf0, #bfe3f6 30%, #2f7fb8 60%, #1d5f95); }
+/* estilo "o mapa ganha cor": nome escrito no mapa */
+.rgn { position: absolute; transform: translate(-50%, -50%); background: none; border: 0; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: inherit; }
+.rgn .rn { font: italic 700 50px/1 Georgia, 'Times New Roman', serif; color: #FFF4DC; -webkit-text-stroke: 7px #3C230F; paint-order: stroke fill; white-space: nowrap; text-shadow: 0 4px 0 rgba(43,30,20,.5); }
+.rgn .st { display: flex; gap: 3px; }
+.rgn .st svg { width: 28px; height: 28px; }
+.rgn .rec { background: var(--wood); color: var(--cream); border: 2px solid var(--ink); border-radius: 8px; padding: 0 10px; font-family: var(--display); font-size: 20px; }
+.rgn.locked .rn { color: #E8D9B8; -webkit-text-stroke-color: #6B5236; }
+.rgn .fl { width: 40px; height: 40px; }
+.rgn .fl svg { width: 100%; height: 100%; }
+.rgn.next .rn { animation: rgnGlow 1.4s ease-in-out infinite; }
+@keyframes rgnGlow { 0%, 100% { text-shadow: 0 0 6px rgba(255, 205, 70, .4), 0 4px 0 rgba(43,30,20,.5); } 50% { text-shadow: 0 0 26px rgba(255, 205, 70, 1), 0 0 10px rgba(255, 220, 120, 1); } }
+.rgn.sel .rn { color: var(--gold); }
+.rgn:active { transform: translate(-50%, -48%); }
 .stage { position: absolute; transform: translate(-50%, -50%); width: 110px; background: none; border: 0; padding: 0; display: flex; flex-direction: column; align-items: center; cursor: pointer; font: inherit; color: inherit; }
 .stage .med { position: relative; width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #A8744A, #5A3A20 72%); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink), inset 0 2px 0 #C99560; display: block; }
 .stage .core { position: absolute; inset: 7px; border-radius: 50%; overflow: hidden; border: 2.5px solid var(--ink); box-shadow: 0 0 0 2.5px #E8B23A; background-size: cover; background-position: center 40%; }
@@ -141,7 +230,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .stage .st svg { width: 20px; height: 20px; }
 .stage.sel .med { outline: 4px solid var(--gold); outline-offset: 4px; }
 .stage:active .med { transform: translateY(2px); }
-.camp-sheet { position: absolute; left: 10px; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); max-width: 420px; margin: 0 auto; background: var(--parchment); border: 4px solid var(--ink); border-radius: 18px; box-shadow: 0 6px 0 var(--ink); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; animation: pop .18s ease-out both; }
+.camp-sheet { z-index: 5; position: absolute; left: 10px; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); max-width: 420px; margin: 0 auto; background: var(--parchment); border: 4px solid var(--ink); border-radius: 18px; box-shadow: 0 6px 0 var(--ink); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; animation: pop .18s ease-out both; }
 .cs-row { display: flex; gap: 12px; align-items: center; }
 .cs-thumb { width: 58px; height: 78px; flex: none; border-radius: 10px; border: 3px solid var(--ink); background-size: cover; background-position: center 40%; }
 .cs-txt { display: flex; flex-direction: column; gap: 3px; }
@@ -166,6 +255,20 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .heroes { display: flex; align-items: flex-end; justify-content: center; gap: 0; height: 106px; max-width: 100%; }
 .heroes img { height: 100%; width: auto; min-width: 0; object-fit: contain; filter: drop-shadow(0 4px 0 rgba(43, 30, 20, 0.6)); }
 .heroes .mid { height: 80%; }
+/* capa: a ilha (começando no castelo nas nuvens) e os monstros cercando o menu */
+.start { background: linear-gradient(180deg, rgba(20, 12, 6, .1), rgba(20, 12, 6, 0) 28%, rgba(20, 12, 6, .5) 55%, rgba(20, 12, 6, .85)), url(assets/mundo.jpg) center 0 / max(150%, 640px) auto no-repeat, #1d5f95; overflow: hidden; }
+.start > *:not(.capa) { position: relative; z-index: 1; }
+.capa { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.capa .cm { position: absolute; filter: drop-shadow(0 6px 4px rgba(0, 0, 0, .5)); }
+.capa .drag { right: -10px; top: calc(env(safe-area-inset-top, 0px) + 56px); width: clamp(150px, 44vw, 230px); transform: scaleX(-1); animation: capaVoa 3.2s ease-in-out infinite; }
+.capa .ogro { left: -30px; bottom: -10px; width: clamp(160px, 42vw, 230px); transform-origin: 50% 100%; animation: capaPasso 2.4s ease-in-out infinite; }
+.capa .gob { left: clamp(96px, 25vw, 140px); bottom: -14px; width: clamp(76px, 20vw, 110px); transform-origin: 50% 100%; animation: capaPasso 1.7s ease-in-out -.6s infinite; }
+.capa .rain { right: -26px; bottom: -6px; width: clamp(146px, 38vw, 210px); transform: scaleX(-1); transform-origin: 50% 100%; animation: capaRainha 3s ease-in-out infinite; }
+@keyframes capaVoa { 0%, 100% { transform: scaleX(-1) translateY(0) rotate(4deg); } 50% { transform: scaleX(-1) translateY(-12px) rotate(-2deg); } }
+@keyframes capaPasso { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) translateY(-3px); } }
+@keyframes capaRainha { 0%, 100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-6px); } }
+@media (max-height: 740px) { .capa .drag { width: 125px; top: calc(env(safe-area-inset-top, 0px) + 4px); } .capa .ogro { width: 125px; left: -26px; } .capa .gob { width: 62px; left: 74px; } .capa .rain { width: 112px; right: -22px; } }
+@media (prefers-reduced-motion: reduce) { .capa .cm { animation-duration: 5s !important; } } /* com "reduzir movimento" ligado, mexem mais devagar em vez de parar */
 .record { display: flex; gap: 10px; }
 .record div { background: var(--parchment); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 6px 12px; display: flex; flex-direction: column; min-width: 92px; }
 .record small { font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #6B5236; }
@@ -182,9 +285,6 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .newbest { font-family: var(--display); color: #B07408; font-size: 18px; }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } .opt, .plaque .bump, .pulse { animation: none; } }
 </style>
-</head>
-<body>
-
 
 <div id="game"><canvas id="cv" aria-label="Mapa do jogo com a trilha, terrenos de construção, torres e inimigos"></canvas></div>
 
@@ -202,6 +302,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   </button>
 </div>
 
+<div class="boss-bar" id="bossBar" hidden><img id="bossImg" alt=""><div class="bb"><b id="bossName">Chefão</b><div class="bt"><div class="bf" id="bossFill"></div><i style="left:25%"></i><i style="left:50%"></i><i style="left:75%"></i></div></div></div>
+<button class="ability torch" id="abTorch" type="button" hidden aria-label="Tocha: toque e depois escolha um lugar perto do caminho">
+  <span class="core"><img src="assets/tocha.png" alt=""></span><span class="tcount" id="torchCount">3</span><span class="lab">Tocha</span>
+</button>
 <div class="abilities" id="abilities" hidden>
   <button class="ability rain" id="abRain" type="button" aria-label="Chuva de flechas: toque e depois escolha o lugar no mapa">
     <span class="core"><img src="assets/ab_rain.png" alt=""><span class="cd"></span><span class="cdnum"></span></span><span class="lab">Chuva de flechas</span>
@@ -236,6 +340,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 </div>
 
 <div class="toast" id="toast" style="opacity:0"></div>
+<div class="annc" id="annc" aria-live="polite"><b id="anncT"></b><span id="anncS"></span></div>
 <div class="tipwrap" id="tip" hidden>
   <div class="tip" role="dialog" aria-labelledby="tipText">
     <small id="tipStep">Passo 1 de 3</small>
@@ -247,13 +352,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
 <div class="start" id="start">
   <h1>Guardiões da Trilha</h1>
-  <p class="sub">Construa torres e defenda o castelo por 10 ondas</p>
-  <div class="heroes" aria-hidden="true">
-    <img src="assets/t_arqueiro.png" alt="">
-    <img src="assets/t_mago.png" alt="">
-    <img class="mid" src="assets/quartel.png" alt="">
-    <img src="assets/t_gelo.png" alt="">
-    <img class="mid" src="assets/t_canhao.png" alt="">
+  <p class="sub">Construa torres e proteja a ilha das hordas de monstros</p>
+  <div class="capa" aria-hidden="true">
+    <img class="cm drag" src="assets/capa_dragao.png" alt="">
+    <img class="cm ogro" src="assets/ogro.png" alt="">
+    <img class="cm gob" src="assets/goblin.png" alt="">
+    <img class="cm rain" src="assets/rainha.png" alt="">
   </div>
   <div class="record">
     <div><small>Estrelas</small><b id="starsTotal">0/12</b></div>
@@ -277,10 +381,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     <h2 id="campTitle">Campanha</h2>
     <div class="camp-total" id="campTotal" aria-label="Estrelas conquistadas"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#FFC93C" stroke="#2B1E14" stroke-width="2"/></svg><b id="campStars">0/12</b></div>
   </div>
-  <p class="camp-hint" id="campHint">Toque numa fase para ver o desafio e jogar</p>
-  <div class="camp-area">
-    <svg id="campTrail" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
-    <div id="campStages"></div>
+    <p class="camp-hint" id="campHint">Toque numa fase para ver o desafio e jogar</p>
+  <div class="camp-area" id="campView">
+    <div id="campWorld"><div id="campSegs"></div><div id="campStages"></div></div>
+    <div class="drag-hint" id="dragHint" hidden><span class="chev">▲</span><span id="dragHintTxt">Arraste para cima para explorar o reino</span><span class="chev">▲</span></div>
   </div>
   <div class="camp-sheet" id="campSheet" hidden>
     <div class="cs-row"><div class="cs-thumb" id="csThumb"></div>
@@ -322,28 +426,62 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 <script>
 (() => {
   // ---------- Mundo (coordenadas da imagem do mapa: 768 x 1376) ----------
-  const WORLD_W = 768, WORLD_H = 1376;
-  const TOTAL_WAVES = 10;
+  // tamanho do mundo: os mapas novos (maiores) podem trazer w/h próprios; os atuais têm 768×1376
+  let WORLD_W = 768, WORLD_H = 1376;
+  const TW = () => (MAP && MAP.waves) || 10; // quantas ondas a fase tem (o duelo com o chefão tem uma só)
   // ---------- Mapas da campanha ----------
   // cada mapa: imagem, um ou mais caminhos (routes) e os terrenos de construção (pads)
   const DESERT_JOIN = [[392,636],[407,693],[490,721],[515,761],[508,798],[475,833],[286,891],[248,918],[235,945],[244,1001],[354,1070],[376,1099],[386,1135],[390,1250]];
   const VOLC_TOP = [[385,-60],[385,100],[385,250],[385,380]], VOLC_END = [[385,975],[385,1060],[385,1150],[390,1250]];
   const MAPS = [
-    { id: 'floresta', name: 'Floresta', img: 'mapa', hp: 1, desc: 'Um caminho só, do topo até o portão. Ótimo para aprender.',
+    { id: 'floresta', name: 'Floresta', phase: 'Trilha do Vilarejo', img: 'mapa', hp: 1, desc: 'Um caminho só, do topo até o portão. Ótimo para aprender.',
       routes: [[[398,-60],[386,40],[392,125],[380,272],[425,326],[505,360],[512,432],[472,464],[380,471],[277,481],[222,551],[270,620],[449,690],[511,738],[500,818],[295,884],[238,937],[257,1018],[348,1062],[392,1120],[390,1250]]],
       pads: [[238,268],[534,238],[552,603],[224,770],[538,1054]] },
-    { id: 'deserto', name: 'Deserto', img: 'mapa_deserto', desc: 'Inimigos chegam por dois caminhos que se juntam no meio. Proteja os dois lados! Cuidado com as tempestades de areia.',
+    { id: 'floresta2', name: 'Floresta', phase: 'Ponte do Riacho', img: 'mapa_floresta2', diff: { count: 2.4, fastFrom: 2, flyFrom: 3, armorFrom: 4 }, w: 1229, h: 2202, desc: 'Dois caminhos atravessam o riacho por pontes e se juntam antes do portão. O mapa é grande: arraste para ver tudo.',
+      intro: 'Este mapa é maior que a tela: arraste com o dedo para ver as duas entradas lá em cima e use a pinça para aproximar. Os inimigos vêm pelos dois caminhos e se juntam depois do riacho.',
+      routes: [[[192,-64],[195,80],[205,160],[238,240],[312,320],[352,400],[338,480],[309,560],[301,640],[302,720],[312,800],[333,880],[344,979],[370,1040],[410,1120],[491,1200],[584,1256],[582,1280],[565,1320],[522,1400],[456,1464],[400,1528],[392,1576],[419,1616],[464,1656],[528,1704],[600,1752],[616,1824],[624,1920],[624,2096]], [[1026,-64],[1021,80],[1008,200],[979,280],[925,360],[864,440],[853,520],[878,600],[898,680],[904,760],[901,840],[890,920],[872,979],[838,1040],[770,1120],[678,1200],[592,1256],[582,1280],[565,1320],[522,1400],[456,1464],[400,1528],[392,1576],[419,1616],[464,1656],[528,1704],[600,1752],[616,1824],[624,1920],[624,2096]]],
+      pads: [[123,213],[419,310],[843,318],[1101,197],[216,552],[960,555],[403,776],[810,797],[408,1254],[776,1242],[269,1514],[560,1517],[832,1808]] },
+    { id: 'floresta3', name: 'Floresta', phase: 'Noite na Mata', img: 'mapa_floresta3', diff: { count: 1.8, fastFrom: 2, flyFrom: 3, armorFrom: 5 }, w: 1229, h: 2202, coins: 240, desc: 'Uma trilha longa no escuro. As torres só acertam o que está iluminado: finque tochas ao longo do caminho!',
+      intro: 'É noite na mata! As torres só acertam inimigos que estão na luz. Toque no botão da tocha (à esquerda) e depois perto do caminho para fincar uma. As tochas se apagam com o tempo: toque nela para reacender (10 moedas). Você ganha 1 tocha nova a cada onda. Cuidado: alguns morcegos apagam tochas quando passam voando! O Quartel luta no escuro.',
+      night: { radius: 300, life: 60, stock: 5, perWave: 1, max: 8, relight: 10 },
+      routes: [[[-64,160],[320,160],[720,168],[960,192],[1040,280],[1059,360],[1024,448],[896,499],[640,528],[400,557],[280,616],[243,704],[280,776],[432,816],[672,848],[896,888],[1000,960],[1016,1040],[979,1104],[848,1136],[608,1160],[384,1197],[275,1264],[232,1392],[256,1464],[360,1520],[576,1560],[800,1597],[928,1656],[979,1728],[968,1795],[915,1856],[856,1896],[752,1936],[632,1984],[632,2128]]],
+      pads: [[541,99],[250,278],[816,298],[1144,314],[546,446],[866,594],[336,699],[690,760],[371,898],[917,1014],[299,1150],[923,1213],[626,1258],[349,1406],[827,1520],[515,1653],[858,1742]] },
+    { id: 'floresta4', name: 'Floresta', phase: 'Lago dos Carvalhos', img: 'mapa_floresta4', diff: { count: 5, fastFrom: 2, flyFrom: 3, armorFrom: 3 }, w: 1229, h: 2202, coins: 240, desc: 'O caminho se divide em volta do lago, e um terceiro grupo chega pela direita. Fique de olho nos três lados!',
+      intro: 'Os inimigos se dividem em volta do lago e também chegam por uma entrada na direita. Os três caminhos se juntam embaixo do lago: torres ali pegam todo mundo.',
+      routes: [[[618,-64],[614,40],[611,160],[610,280],[624,384],[632,480],[624,552],[618,595],[494,640],[397,680],[330,720],[291,760],[266,800],[248,840],[235,920],[240,1000],[262,1080],[285,1120],[322,1160],[373,1200],[459,1240],[608,1288],[603,1360],[592,1408],[586,1480],[555,1520],[526,1560],[488,1600],[448,1640],[419,1680],[410,1720],[411,1760],[429,1800],[451,1840],[512,1912],[624,1976],[624,2128]], [[618,-64],[614,40],[611,160],[610,280],[624,384],[632,480],[624,552],[618,595],[752,640],[837,680],[904,720],[942,760],[966,800],[992,880],[997,960],[982,1040],[946,1120],[910,1160],[854,1200],[765,1240],[621,1288],[603,1360],[592,1408],[586,1480],[555,1520],[526,1560],[488,1600],[448,1640],[419,1680],[410,1720],[411,1760],[429,1800],[451,1840],[512,1912],[624,1976],[624,2128]], [[1296,1456],[1152,1464],[1024,1448],[896,1416],[784,1379],[688,1341],[616,1352],[603,1360],[592,1408],[586,1480],[555,1520],[526,1560],[488,1600],[448,1640],[419,1680],[410,1720],[411,1760],[429,1800],[451,1840],[512,1912],[624,1976],[624,2128]]],
+      pads: [[514,184],[720,387],[370,589],[862,587],[1061,786],[170,786],[1069,1062],[160,1066],[333,1286],[891,1286],[1051,1378],[475,1467],[794,1493],[506,1722]] },
+    { id: 'floresta5', name: 'Floresta', phase: 'Covil do Carvalho Sombrio', img: 'mapa_floresta5', coins: 650, waves: 1, duel: 'carvalho', desc: 'Duelo com o chefão da Floresta: o Carvalho Sombrio. Derrube-o antes que ele chegue ao portão!',
+      intro: 'O Carvalho Sombrio despertou! Não há ondas: só ele, andando devagar até o portão. Se ele chegar, você perde. A cada quarto de vida que ele perde, entra em fúria: chama reforços da floresta, prende torres com raízes e por fim fica mais rápido. Cada fúria também te dá 60 moedas para reforçar a defesa.',
+      routes: [[[395,200],[390,275],[420,310],[470,335],[505,360],[515,395],[500,425],[420,450],[320,470],[250,490],[220,520],[215,560],[230,600],[290,630],[380,655],[460,680],[510,715],[530,750],[520,790],[470,815],[400,835],[320,860],[255,885],[215,920],[205,960],[215,1000],[250,1030],[310,1055],[360,1080],[390,1110],[395,1150],[395,1240],[395,1330]]],
+      pads: [[569,295],[291,318],[228,398],[570,505],[551,639],[189,667],[400,761],[220,815],[509,916],[492,1061],[270,1118]] },
+    { id: 'deserto', name: 'Deserto', phase: 'Dunas do Faraó', img: 'mapa_deserto', desc: 'Inimigos chegam por dois caminhos que se juntam no meio. Proteja os dois lados! Cuidado com as tempestades de areia.',
       intro: 'Neste mapa os inimigos chegam por dois caminhos: um pelo topo e outro pela direita. Eles se juntam no meio, então torres perto do encontro pegam os dois grupos.',
       routes: [[[111,-60],[126,40],[140,115],[166,184],[205,240],[255,292],[280,330],[284,439],[298,521],[350,602]].concat(DESERT_JOIN),
                [[830,150],[750,176],[734,198],[651,224],[592,274],[564,324],[538,402],[541,506],[534,538],[484,589]].concat(DESERT_JOIN)],
       pads: [[325,180],[120,420],[410,465],[665,385],[210,760],[440,960],[585,1070]],
       storm: { first: 18, every: 38, last: 8, range: 0.7 } },
-    { id: 'gelo', name: 'Gelo', img: 'mapa_gelo', desc: 'Um caminho longo em zigue-zague que atravessa um lago congelado. No gelo, os inimigos escorregam bem mais rápido!',
+    { id: 'deserto2', name: 'Deserto', phase: 'Volta da Pirâmide', img: 'mapa_deserto2', w: 1229, h: 2202, diff: { count: 2.4, fastFrom: 2, flyFrom: 3, armorFrom: 4 }, desc: 'A estrada contorna a pirâmide quase por inteiro: os inimigos passam duas vezes perto das mesmas torres.',
+      routes: [[[-64,339],[160,336],[400,339],[640,360],[800,424],[912,528],[976,672],[984,832],[952,992],[864,1104],[720,1160],[480,1152],[320,1192],[248,1280],[240,1408],[296,1536],[416,1616],[608,1672],[752,1728],[848,1808],[864,1880],[752,1944],[632,1992]]],
+      pads: [[437,264],[200,432],[640,488],[925,416],[885,712],[1056,944],[792,1053],[421,1064],[341,1304],[640,1280],[240,1549],[536,1568],[664,1824],[944,1888]] },
+    { id: 'deserto3', name: 'Deserto', phase: 'Tridente das Ruínas', img: 'mapa_deserto3', w: 1229, h: 2202, coins: 280, diff: { count: 1.3, fastFrom: 2, flyFrom: 3, armorFrom: 5 }, desc: 'Três entradas que se juntam no meio. Uma tempestade varre o mapa e a areia movediça engole torres!',
+      intro: 'Três caminhos se juntam no meio das ruínas. Cuidado com o deserto: uma TEMPESTADE atravessa o mapa de tempos em tempos, e as torres dentro dela param de atirar. E às vezes uma torre começa a afundar na AREIA MOVEDIÇA: toque nela 3 vezes para puxá-la de volta antes que suma!',
+      sweep: { first: 16, every: 38, dur: 17, width: 580 }, quick: { first: 28, every: 34, time: 7, taps: 3 },
+      routes: [[[184,-64],[189,96],[216,240],[280,352],[384,480],[496,592],[592,680],[616,712],[624,832],[672,960],[800,1056],[912,1152],[952,1264],[912,1376],[784,1440],[608,1480],[448,1512],[320,1576],[256,1664],[256,1760],[320,1840],[416,1904],[528,1952],[624,1992]], [[616,-64],[608,160],[595,400],[589,560],[600,680],[616,712],[624,832],[672,960],[800,1056],[912,1152],[952,1264],[912,1376],[784,1440],[608,1480],[448,1512],[320,1576],[256,1664],[256,1760],[320,1840],[416,1904],[528,1952],[624,1992]], [[1048,-64],[1037,160],[1000,320],[896,464],[752,576],[640,680],[616,712],[624,832],[672,960],[800,1056],[912,1152],[952,1264],[912,1376],[784,1440],[608,1480],[448,1512],[320,1576],[256,1664],[256,1760],[320,1840],[416,1904],[528,1952],[624,1992]]],
+      pads: [[112,248],[509,224],[928,216],[395,416],[693,496],[979,520],[459,733],[768,731],[613,1043],[965,1072],[864,1344],[413,1480],[725,1576],[349,1744]] },
+    { id: 'deserto4', name: 'Deserto', phase: 'Dois Desfiladeiros', img: 'mapa_deserto4', w: 1229, h: 2202, coins: 300, diff: { count: 2, fastFrom: 2, flyFrom: 3, armorFrom: 4 }, desc: 'Dois caminhos longos e separados, um de cada lado da grande rocha, que só se encontram no portão. Divida a defesa!',
+      intro: 'Os inimigos vêm pelos dois lados da grande rocha e só se encontram no portão. Uma torre não alcança os dois caminhos: divida bem a sua defesa.',
+      routes: [[[-64,240],[64,248],[160,304],[224,416],[224,560],[192,704],[168,848],[176,992],[200,1120],[192,1248],[176,1376],[176,1488],[216,1600],[288,1712],[384,1808],[480,1880],[624,1984]], [[1293,224],[1152,224],[1040,288],[976,384],[976,528],[1000,672],[1032,816],[1040,960],[1024,1120],[1024,1280],[1040,1408],[1024,1536],[976,1664],[896,1776],[800,1872],[624,1984]]],
+      pads: [[131,384],[346,544],[984,240],[1069,544],[96,739],[963,811],[264,997],[1144,1037],[109,1251],[936,1267],[269,1488],[1141,1509],[872,1664],[208,1768]] },
+    { id: 'deserto5', name: 'Deserto', phase: 'Ninho do Verme', img: 'mapa_deserto5', w: 1229, h: 2202, coins: 1100, waves: 1, duel: 'verme', desc: 'Duelo com o chefão do Deserto: o Verme da Areia. Ele mergulha na areia e surge em outro ponto do caminho!',
+      intro: 'O Verme da Areia saiu do ninho! Não há ondas: só ele. De tempos em tempos ele MERGULHA e surge em outro ponto do caminho, às vezes à frente, às vezes atrás. A areia treme no lugar onde ele vai surgir, e ao surgir ele derruba as torres bem perto. Debaixo da areia ele não toma dano. Quando passa da metade final do caminho, para de mergulhar e segue até o portão. Se chegar, você perde!',
+      routes: [[[624,344],[632,416],[656,472],[720,515],[864,541],[976,576],[1024,640],[1000,712],[896,768],[704,784],[480,800],[288,845],[192,912],[200,1008],[288,1072],[480,1104],[720,1120],[912,1160],[1016,1232],[1008,1328],[896,1389],[688,1416],[448,1427],[288,1461],[216,1536],[240,1632],[368,1709],[608,1744],[800,1757],[912,1792],[941,1856],[928,1920],[915,1984]]],
+      pads: [[632,624],[920,664],[531,712],[336,925],[552,936],[760,880],[920,904],[435,979],[627,1021],[768,1021],[1032,1104],[819,1232],[741,1304],[1096,1224],[432,1533],[539,1656],[656,1648]] },
+    { id: 'gelo', name: 'Gelo', phase: 'Lago Congelado', img: 'mapa_gelo', desc: 'Um caminho longo em zigue-zague que atravessa um lago congelado. No gelo, os inimigos escorregam bem mais rápido!',
       intro: 'Cuidado com o lago congelado no meio do mapa: quando os inimigos passam pelo gelo, eles escorregam e ficam bem mais rápidos. Morcegos voam por cima e não escorregam. Torres de Gelo e Quartel perto do lago ajudam a segurar.',
       routes: [[[-60,160],[60,160],[250,160],[440,165],[540,190],[595,250],[585,310],[520,345],[400,355],[260,370],[185,410],[165,480],[185,560],[230,630],[350,665],[480,690],[545,715],[520,770],[440,810],[300,850],[225,900],[215,960],[260,1015],[360,1060],[395,1110],[395,1250]]],
       pads: [[305,278],[358,518],[600,525],[152,830],[573,1058]],
       ice: { x: 390, y: 672, rx: 215, ry: 112, speed: 1.75 } },
-    { id: 'vulcao', name: 'Vulcão', img: 'mapa_vulcao', desc: 'O caminho se divide em volta do lago de lava. O vulcão lança bolas de fogo nas torres e a fumaça esconde os inimigos!',
+    { id: 'vulcao', name: 'Vulcão', phase: 'Rio de Lava', img: 'mapa_vulcao', desc: 'O caminho se divide em volta do lago de lava. O vulcão lança bolas de fogo nas torres e a fumaça esconde os inimigos!',
       intro: 'Aqui o caminho se divide em dois em volta do lago de lava e se junta de novo antes do portão. Espalhe torres pelos dois lados e fique de olho no vulcão lá no canto!',
       routes: [VOLC_TOP.concat([[280,425],[185,485],[150,565],[140,655],[160,760],[220,860],[300,930]], VOLC_END),
                VOLC_TOP.concat([[490,425],[585,485],[620,565],[630,655],[610,760],[550,860],[470,930]], VOLC_END)],
@@ -359,7 +497,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     gelo: { basic: 'kobold', fast: 'lobo_gelo', fly: 'coruja', armor: 'yeti', boss: 'rainha' },
     vulcao: { basic: 'salamandra', fast: 'diabrete', fly: 'dragaozinho', armor: 'golem', boss: 'dragao' }
   };
-  const rosterOf = m => ROSTER[m.id] || ROSTER.floresta; // Gelo e Vulcão usam a Floresta até ganharem os seus
+  const regionId = m => m.id.replace(/\d+$/, ''); // floresta3 -> floresta
+  const rosterOf = m => ROSTER[regionId(m)] || ROSTER.floresta; // Gelo e Vulcão usam a Floresta até ganharem os seus
   let MAP = MAPS[0], PADS = MAP.pads, ROUTES = [];
   const BASE_DROP = 34; // a base da torre fica um pouco abaixo do centro do terreno
 
@@ -386,6 +525,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     dragao:  { name: 'Dragão Ancião', img: 'dragao', w: 170, h: 160, hp: 680, speed: 20, reward: 110, damage: 6, style: 'stomp', cadence: 3, atk: 32, boss: true, breath: { every: 10, count: 2, range: 340 } },
     diabrete: { name: 'Diabrete de fogo', img: 'diabrete', w: 74, h: 76, hp: 30, speed: 92, reward: 8, damage: 1, style: 'waddle', cadence: 13, atk: 5 },
     golem:   { name: 'Golem de magma', img: 'golem', w: 118, h: 128, hp: 230, speed: 24, reward: 24, damage: 3, style: 'march', cadence: 3.6, atk: 16 },
+    // chefão da Floresta: só aparece no duelo da fase 5
+    // chefão do Deserto: mergulha na areia e surge em outro ponto do caminho
+    verme: { name: 'Verme da Areia', img: 'verme', w: 180, h: 200, hp: 6000, speed: 10, reward: 250, damage: 20, style: 'stomp', cadence: 2, atk: 45, boss: true, duel: true, worm: { every: [10, 14], warn: 2, sinkT: 1.5, underT: [2, 3], riseT: 1.2, eatT: 2, swallowMax: 3, swallowChance: 0.35, minTime: 300, after: 2, from: 0.15, to: 0.72, guard: 0.78, jump: 0.3, back: 0.6, stun: 4, stunR: 190 } },
+    carvalho: { name: 'Carvalho Sombrio', img: 'carvalho', w: 210, h: 230, hp: 1900, speed: 15, reward: 250, damage: 20, style: 'stomp', cadence: 2.4, atk: 45, boss: true, duel: true },
     ogro:    { name: 'Rei Ogro', img: 'ogro', w: 150, h: 157, hp: 420, speed: 22, reward: 70, damage: 5, style: 'stomp', cadence: 3.4, atk: 24, boss: true }
   };
 
@@ -441,7 +584,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     }
     return { path, seg, len };
   }
-  function loadMap(i) { MAP = MAPS[i]; PADS = MAP.pads; ROUTES = MAP.routes.map(makeRoute); }
+  function loadMap(i) { MAP = MAPS[i]; PADS = MAP.pads; ROUTES = MAP.routes.map(makeRoute); WORLD_W = MAP.w || 768; WORLD_H = MAP.h || 1376; }
   loadMap(0);
   const routeLen = r => (ROUTES[r] || ROUTES[0]).len;
   function pointAt(d, r) {
@@ -475,7 +618,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
   // ---------- Imagens ----------
   const IMG = {};
-  const files = { pad_deserto: 'assets/pad_deserto.png', pad_gelo: 'assets/pad_gelo.png', pad_vulcao: 'assets/pad_vulcao.png', mapa: 'assets/mapa.jpg', mapa_vulcao: 'assets/mapa_vulcao.jpg', mapa_deserto: 'assets/mapa_deserto.jpg', mapa_gelo: 'assets/mapa_gelo.jpg', pad: 'assets/pad.png', goblin: 'assets/goblin.png', lobo: 'assets/lobo.png', ogro: 'assets/ogro.png',
+  const files = { pad_deserto: 'assets/pad_deserto.png', pad_gelo: 'assets/pad_gelo.png', pad_vulcao: 'assets/pad_vulcao.png', mapa: 'assets/mapa.jpg', mapa_vulcao: 'assets/mapa_vulcao.jpg', mapa_deserto: 'assets/mapa_deserto.jpg', mapa_gelo: 'assets/mapa_gelo.jpg', mapa_floresta2: 'assets/mapa_floresta2.jpg', mapa_floresta3: 'assets/mapa_floresta3.jpg', mapa_floresta4: 'assets/mapa_floresta4.jpg', mapa_floresta5: 'assets/mapa_floresta5.jpg', mapa_deserto2: 'assets/mapa_deserto2.jpg', mapa_deserto3: 'assets/mapa_deserto3.jpg', mapa_deserto4: 'assets/mapa_deserto4.jpg', mapa_deserto5: 'assets/mapa_deserto5.jpg', verme: 'assets/verme.png', carvalho: 'assets/carvalho.png', tocha: 'assets/tocha.png', flag_azul: 'assets/flag_azul.png', flag_verm: 'assets/flag_verm.png', flag_cinza: 'assets/flag_cinza.png', pad: 'assets/pad.png', goblin: 'assets/goblin.png', lobo: 'assets/lobo.png', ogro: 'assets/ogro.png',
     t_arqueiro: 'assets/t_arqueiro.png', t_mago: 'assets/t_mago.png', t_canhao: 'assets/t_canhao.png', t_gelo: 'assets/t_gelo.png',
     t_arq2: 'assets/t_arq2.png', t_arq3: 'assets/t_arq3.png', t_mag2: 'assets/t_mag2.png', t_mag3: 'assets/t_mag3.png',
     t_can2: 'assets/t_can2.png', t_can3: 'assets/t_can3.png', t_gel2: 'assets/t_gel2.png', t_gel3: 'assets/t_gel3.png',
@@ -486,14 +629,17 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
   // ---------- Ondas geradas por regra ----------
   function buildWave(n) {
+    if (MAP.duel) return [{ type: MAP.duel, gap: 1, hpMul: 1 }]; // duelo: só o chefão
     const list = [], R = rosterOf(MAP);
-    const goblins = Math.min(4 + n * 2, 30);
-    const wolves = n >= 3 ? Math.min(Math.floor((n - 1) * 1.5), 18) : 0;
-    for (let i = 0; i < goblins; i++) list.push({ type: R.basic, gap: 1.1 });
+    // dificuldade da fase: mais monstros e tipos fortes mais cedo (os monstros em si são sempre iguais)
+    const D = Object.assign({ count: 1, fastFrom: 3, flyFrom: 4, armorFrom: 6 }, MAP.diff || {}), C = x => Math.round(x * D.count);
+    const goblins = C(Math.min(4 + n * 2, 30));
+    const wolves = n >= D.fastFrom ? C(Math.min(Math.floor((n - D.fastFrom + 2) * 1.5), 18)) : 0;
+    for (let i = 0; i < goblins; i++) list.push({ type: R.basic, gap: 1.1 / Math.sqrt(D.count) });
     for (let i = 0; i < wolves; i++) list.splice(Math.min(list.length, 3 + i * 2), 0, { type: R.fast, gap: 0.7 });
-    const bats = n >= 4 ? Math.min(Math.floor((n - 3) * 1.5), 16) : 0;
+    const bats = n >= D.flyFrom ? C(Math.min(Math.floor((n - D.flyFrom + 1) * 1.5), 16)) : 0;
     for (let i = 0; i < bats; i++) list.splice(Math.min(list.length, 2 + i * 3), 0, { type: R.fly, gap: 0.8 });
-    const orcs = n >= 6 ? Math.min(n - 5, 12) : 0;
+    const orcs = n >= D.armorFrom ? C(Math.min(n - D.armorFrom + 1, 12)) : 0;
     for (let i = 0; i < orcs; i++) list.splice(Math.min(list.length, 5 + i * 5), 0, { type: R.armor, gap: 2.0 });
     if (n % 5 === 0) for (let i = 0; i < Math.ceil(n / 10); i++) list.push({ type: R.boss, gap: 2.5 });
     if (MAP.lava) for (const e of list) if (e.type === R.fast || e.type === R.armor) e.lava = true; // no Vulcão eles saem do lago de lava
@@ -506,8 +652,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   let S;
   function newState() {
     return {
-      lives: 20, coins: 200, wave: 0, queue: [], spawnTimer: 0, enemies: [], effects: [], shots: [],
-      towers: PADS.map(() => null), waveActive: false, time: 0, over: false, shake: 0, selected: -1,
+      lives: 20, coins: MAP.coins || 200, wave: 0, queue: [], spawnTimer: 0, enemies: [], effects: [], shots: [],
+      towers: PADS.map(() => null), sweepClock: 0, sweepX: null, quickClock: 0, torches: [], torchStock: MAP.night ? MAP.night.stock : 0, waveActive: false, time: 0, over: false, shake: 0, selected: -1,
       ab: { rain: 0, reinf: 0 }, reinf: [], spawned: 0, autoIn: 0, eruptClock: 0, eruptNext: 0, balls: [], smokeClock: 0, smokeNext: 0, smokeLeft: 0, smokeZone: 0, smokeWarned: false, stormClock: 0, stormNext: 0, stormLeft: 0, stormWarned: false
     };
   }
@@ -624,13 +770,46 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     const W = cv.clientWidth, H = cv.clientHeight;
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    scale = Math.max(W / WORLD_W, H / WORLD_H);
-    offX = (W - WORLD_W * scale) / 2;
-    offY = (H - WORLD_H * scale) / 2;
+    const k = bcam.min ? scale / bcam.min : 1;
+    bcamLimits();
+    scale = bcam.min * k;
+    bcamClamp();
     if (menuPad >= 0) openMenu(menuPad);
     if (S && S.selected >= 0 && S.towers[S.selected]) openTowerMenu(S.selected);
   }
   window.addEventListener('resize', resize);
+  // ---------- Câmera da partida: arrastar e pinça ----------
+  // sem bordas vazias: o mapa sempre cobre a tela. Nos mapas grandes, tudo aparece ~15% menor que hoje e dá para arrastar.
+  const bcam = { min: 1, def: 1, max: 2 };
+  function bcamLimits() {
+    const W = cv.clientWidth, H = cv.clientHeight;
+    bcam.min = Math.max(W / WORLD_W, H / WORLD_H);
+    bcam.def = Math.max(bcam.min, H / 1376 * 0.85);
+    bcam.max = Math.max(bcam.min * 1.8, bcam.def * 1.8);
+  }
+  function bcamClamp() {
+    const W = cv.clientWidth, H = cv.clientHeight;
+    scale = Math.max(bcam.min, Math.min(bcam.max, scale));
+    offX = Math.min(0, Math.max(W - WORLD_W * scale, offX));
+    // dá para puxar o mapa um pouco para baixo, para ver o que fica atrás do placar e da barra do chefão
+    const pad = MAP && MAP.duel ? 120 : 70;
+    offY = Math.min(pad, Math.max(H - WORLD_H * scale, offY));
+  }
+  // ao começar: zoom padrão, centralizado na horizontal e mostrando o portão (embaixo)
+  function camReset() {
+    if (!cv.clientWidth) return;
+    bcamLimits(); scale = bcam.min; // começa com o zoom todo para fora: o mapa inteiro na tela
+    offX = (cv.clientWidth - WORLD_W * scale) / 2; offY = cv.clientHeight - WORLD_H * scale;
+    if (MAP.duel) offY = 70; // no duelo, começa mostrando o covil de onde o chefão sai
+    bcamClamp();
+  }
+  function bcamZoomAt(f, sx, sy) {
+    const s0 = scale; scale *= f; bcamClamp();
+    const k = scale / s0; offX = sx - (sx - offX) * k; offY = sy - (sy - offY) * k; bcamClamp();
+  }
+  // ponto do mundo no alto da tela (para textos de bônus) e perto do portão (para a vida perdida)
+  const viewTop = () => ({ x: (cv.clientWidth / 2 - offX) / scale, y: (130 - offY) / scale });
+  const gateAt = r => { const P = (ROUTES[r] || ROUTES[0]).path, q = P[P.length - 1]; return { x: q[0], y: Math.min(q[1], WORLD_H - 140) }; };
   const toScreen = (x, y) => [offX + x * scale, offY + y * scale];
 
   // ---------- HUD ----------
@@ -647,9 +826,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       const st = S.towers[S.selected];
       if (st && !elT.hidden && st.level < MAX_LEVEL) $('tmUp').classList.toggle('locked', upCostOf(st) > S.coins);
     }
-    elWave.textContent = endless ? String(S.wave) : S.wave + '/' + TOTAL_WAVES;
+    elWave.textContent = endless ? String(S.wave) : S.wave + '/' + TW();
     const remaining = S.queue.length + S.enemies.length;
-    const hasNext = !S.over && (endless || S.wave < TOTAL_WAVES);
+    const hasNext = !S.over && (endless || S.wave < TW());
     const canCall = hasNext && (!S.waveActive || !S.queue.length);
     btnCall.hidden = !canCall || inMenu || tutStep === 1;
     elProgress.hidden = true;
@@ -684,11 +863,26 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   const AUTO_WAVE = 5;
   const autoBonus = () => Math.ceil(S.autoIn || 0) * 3;
   let toastTimer = 0;
-  function toast(msg, secs = 2.6) {
+  function toast(msg, secs = 3.2) {
     const t = $('toast');
     t.textContent = msg; t.style.opacity = '1';
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.style.opacity = '0'; }, secs * 1000);
+  }
+
+  // anúncio grande no meio da tela (início/fim de onda, eventos do chefão)
+  function announce(title, sub, kind) {
+    const a = $('annc');
+    $('anncT').textContent = title; $('anncS').textContent = sub || '';
+    a.className = 'annc' + (kind ? ' ' + kind : '');
+    void a.offsetWidth; a.classList.add('show');
+  }
+  // instrução de como usar algo: só aparece nas 2 primeiras vezes (valendo para o jogo todo)
+  function teach(key, msg, secs) {
+    if (!save.taught) save.taught = {};
+    if ((save.taught[key] || 0) >= 2) return;
+    save.taught[key] = (save.taught[key] || 0) + 1; persist();
+    toast(msg, secs || 3);
   }
 
   // ---------- Menu de construção ----------
@@ -789,6 +983,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     $('tmStars').setAttribute('aria-label', 'Nível ' + t.level + ' de ' + MAX_LEVEL);
     $('tmStat').textContent = statLine(t);
     const up = $('tmUp');
+    if (upPending !== i) upPending = -1;
+    up.firstChild.textContent = upPending === i ? 'Confirmar' : 'Melhorar';
+    up.classList.toggle('confirm', upPending === i);
     if (t.level >= MAX_LEVEL) { $('tmUpCost').textContent = 'nível máximo'; up.classList.add('locked'); }
     else { $('tmUpCost').textContent = upCostOf(t) + ' moedas'; up.classList.toggle('locked', upCostOf(t) > S.coins); }
     $('tmSellVal').textContent = '+' + sellOf(t) + ' moedas';
@@ -803,14 +1000,23 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     elT.style.left = Math.max(130, Math.min(W - 130, sx)) + 'px';
     elT.style.top = top + 'px';
   }
-  function closeTowerMenu() { S.selected = -1; elT.hidden = true; rallyFor = -1; }
+  let upPending = -1; // 1º toque em Melhorar mostra o alcance novo; o 2º confirma
+  function closeTowerMenu() { S.selected = -1; elT.hidden = true; rallyFor = -1; upPending = -1; }
   $('tmUp').addEventListener('click', ev => {
     ev.stopPropagation();
     const i = S.selected, t = S.towers[i];
     if (!t) return;
     if (t.level >= MAX_LEVEL) { toast('Essa torre já está no nível máximo.'); return; }
     const c = upCostOf(t);
+    if (upPending !== i) {
+      // primeiro toque: mostra o alcance do próximo nível e pede confirmação
+      upPending = i; Sound.play('click'); openTowerMenu(i);
+      if (c > S.coins) toast('Faltam ' + (c - S.coins) + ' moedas para melhorar.');
+      else teach('upgrade', 'Toque de novo em Confirmar para melhorar');
+      return;
+    }
     if (c > S.coins) { toast('Faltam ' + (c - S.coins) + ' moedas para melhorar.'); return; }
+    upPending = -1;
     S.coins -= c; t.spent += c; t.level++; t.built = 0.1;
     Sound.play('upgrade');
     if (t.soldiers) for (const so of t.soldiers) { so.maxHp = SOLDIER.hp[t.level - 1]; if (so.alive) so.hp = so.maxHp; }
@@ -839,18 +1045,18 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     ev.stopPropagation();
     rallyFor = S.selected;
     elT.hidden = true;
-    toast('Toque num ponto do caminho, dentro do círculo de alcance, para posicionar os soldados.', 3.5);
+    teach('rally', 'Toque num ponto do caminho, dentro do círculo de alcance, para posicionar os soldados.', 3.5);
   });
 
   // ---------- Ondas ----------
   function startWave(auto) {
-    if (S.over || inMenu || (!endless && S.wave >= TOTAL_WAVES)) return;
+    if (S.over || inMenu || (!endless && S.wave >= TW())) return;
     if (S.waveActive && S.queue.length) return;
     if (auto !== true) closeMenu(); // na chamada automática, não fecha o menu que o jogador estiver usando
     if (!S.waveActive && S.autoIn > 0) {
       // chamou antes de a contagem acabar: bônus pelos segundos que faltavam
       const b = autoBonus();
-      if (b > 0) { S.coins += b; S.effects.push({ kind: 'float', x: 390, y: 120, t: 0, text: '+' + b + ' coragem', color: '#FFD95A', big: true }); Sound.play('coin'); }
+      if (b > 0) { S.coins += b; S.effects.push({ kind: 'float', ...viewTop(), t: 0, text: '+' + b + ' moedas', color: '#FFD95A', big: true }); Sound.play('coin'); }
     }
     S.autoIn = 0;
     if (S.waveActive) {
@@ -858,7 +1064,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       const bonus = 25 + S.wave * 5, extra = earlyBonus();
       S.coins += bonus + extra;
       { const ms = MS(); if (endless ? S.wave > ms.bestEndless : S.wave > ms.best) { if (endless) ms.bestEndless = S.wave; else ms.best = S.wave; persist(); } }
-      S.effects.push({ kind: 'float', x: 390, y: 120, t: 0, text: '+' + extra + ' coragem', color: '#FFD95A', big: true });
+      S.effects.push({ kind: 'float', ...viewTop(), t: 0, text: '+' + extra + ' moedas', color: '#FFD95A', big: true });
       Sound.play('coin');
     }
     S.wave++;
@@ -868,7 +1074,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     Sound.play(S.wave % 5 === 0 ? 'horn' : 'wave');
     if (tutStep === 2 || tutStep === 1) setTut(0);
     introAbility(S.wave);
-    toast(S.wave % 5 === 0 ? 'Onda ' + S.wave + ': o Rei Ogro vem junto!' : 'Onda ' + S.wave + ' chegando!');
+    if (MAP.night && S.wave > 1) S.torchStock = Math.min(MAP.night.max, S.torchStock + MAP.night.perWave);
+    if (MAP.duel) announce('DUELO!', 'O ' + ENEMIES[MAP.duel].name + ' despertou', 'fury');
+    else announce('ONDA ' + S.wave, S.wave % 5 === 0 ? 'o ' + ENEMIES[rosterOf(MAP).boss].name + ' vem junto!' : '');
     updateHUD();
   }
   // invoca inimigos saindo da areia logo atrás de quem invocou (usado pelo Faraó)
@@ -895,7 +1103,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
   // ---------- Combate ----------
   function damage(e, amount, kind) {
-    if (e.dead) return;
+    if (e.dead || e.burrow) return;
     if ((kind === 'arrow' || kind === 'shard' || kind === 'magic' || kind === 'blast') && inSmoke(e)) return; // torre não acerta quem está na fumaça
     if (kind === 'arrow' && e.T.armor) {
       amount = Math.round(amount * e.T.armor);
@@ -906,7 +1114,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       // a múmia cai e levanta de novo com metade da vida (só uma vez)
       e.revived = true; e.hp = Math.round(e.maxHp * e.T.revive); e.emerge = 1.1; e.blocker = null;
       S.effects.push({ kind: 'dust', x: e.x, y: e.y, t: 0 });
-      S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 20, t: 0, text: 'DE NOVO!', color: '#9BE07A' });
+      S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 20, t: 0, text: 'Reviveu!', color: '#5FE0A0', italic: true });
+      for (let k = 0; k < 3; k++) S.effects.push({ kind: 'ghost', x: e.x + (k - 1) * 18, y: e.y - e.T.h * 0.4, t: -k * 0.12 });
       if (!save.seenMummy) { save.seenMummy = true; persist(); infoCard('Múmias', 'As múmias não morrem de primeira: caem e levantam uma vez com metade da vida. Continue atacando até elas virarem pó!'); }
       return;
     }
@@ -925,7 +1134,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       if (e.dead || e.d < 0) continue;
       if (t.T.shot === 'ball' && e.T.flying) continue;
       if (inSmoke(e)) continue; // dentro da fumaça as torres não enxergam
+      if (MAP.night && !litAt(e.x, e.y)) continue; // à noite, só o que está na luz
       if (e.emerge > 0.3) continue; // ainda saindo da lava
+      if (e.burrow) continue; // verme debaixo da areia
       const dx = e.x - t.x, dy = (e.y - t.y) * 1.25;
       const R = rangeOf(t);
       if (dx * dx + dy * dy <= R * R && (!best || e.d > best.d)) best = e;
@@ -1056,8 +1267,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     aiming = k;
     btnRain.classList.toggle('aiming', k === 'rain');
     btnReinf.classList.toggle('aiming', k === 'reinf');
-    if (k === 'rain') toast('Toque no mapa onde a chuva de flechas deve cair', 3);
-    if (k === 'reinf') toast('Toque num ponto do caminho para chamar os reforços', 3);
+    $('abTorch').classList.toggle('aiming', k === 'torch');
+    if (k === 'torch') teach('torch', 'Toque perto do caminho para fincar a tocha');
+    if (k === 'rain') teach('rain', 'Toque no mapa onde a chuva de flechas deve cair');
+    if (k === 'reinf') teach('reinf', 'Toque num ponto do caminho para chamar os reforços');
   }
   function tapAbility(k) {
     if (S.over || inMenu) return;
@@ -1070,6 +1283,14 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   btnRain.addEventListener('click', () => tapAbility('rain'));
   btnReinf.addEventListener('click', () => tapAbility('reinf'));
   function castAbility(k, wx, wy) {
+    if (k === 'torch') {
+      const np = nearestPathPoint(wx, wy);
+      if (np.dist > 170) { toast('Coloque a tocha mais perto do caminho.'); return; }
+      if (S.torches.some(o => Math.hypot(o.x - wx, o.y - wy) < 70)) { toast('Já tem uma tocha aí.'); return; }
+      S.torches.push({ x: wx, y: wy, life: MAP.night.life }); S.torchStock--;
+      S.effects.push({ kind: 'dust', x: wx, y: wy, t: 0 }); Sound.play('build');
+      setAiming(null); return;
+    }
     if (k === 'rain') {
       const dmg = 30 + S.wave * 6;
       S.effects.push({ kind: 'rain', x: wx, y: wy, t: 0, r: AB.rain.radius, seed: Math.random() * 1000 });
@@ -1313,6 +1534,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   let shownAb = '';
   function refreshAbilities() {
     elAbil.hidden = inMenu || S.over;
+    const tb = $('abTorch'); tb.hidden = !MAP.night || inMenu || S.over;
+    if (!tb.hidden) { $('torchCount').textContent = S.torchStock; tb.classList.toggle('empty', S.torchStock <= 0); }
+    updateBossBar();
     for (const [k, b] of [['rain', btnRain], ['reinf', btnReinf]]) {
       const locked = !abUnlocked(k), left = S.ab[k];
       const key = k + locked + Math.ceil(left);
@@ -1330,6 +1554,373 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     else if (n >= 3 && !save.seenReinf) { save.seenReinf = true; persist(); infoCard('Nova habilidade', 'Reforços: toque no botão azul e depois no caminho. Dois soldados seguram os inimigos por 15 segundos. Recarrega em 25 segundos.'); }
   }
 
+  // ---------- Fase noturna (Floresta 3): tochas iluminam o caminho ----------
+  // intensidade da luz de uma tocha: nos últimos 10 segundos ela vai fraquejando
+  const torchR = tc => { const N = MAP.night; if (!N || tc.life <= 0) return 0; return N.radius * (tc.life < 10 ? 0.55 + 0.45 * tc.life / 10 : 1); };
+  function litAt(x, y) {
+    for (const tc of S.torches) { const r = torchR(tc); if (r && Math.hypot(x - tc.x, (y - tc.y) * 1.25) < r) return true; }
+    const L = MAP.night.lantern || 0; // cada torre tem uma lanterna que ilumina bem pertinho dela
+    if (L) for (const t of S.towers) if (t && Math.hypot(x - t.x, (y - t.y) * 1.25) < L) return true;
+    return false;
+  }
+  // morcego passando perto de uma tocha acesa apaga o fogo
+  function batVsTorch(e) {
+    // só alguns morcegos apagam (1 em cada 3, sorteado quando ele chega perto da primeira tocha), e cada um apaga no máximo uma
+    if (e.doneTorch) return;
+    for (const tc of S.torches) {
+      if (tc.life > 0 && Math.hypot(e.x - tc.x, e.y - tc.y) < 85) {
+        if (e.putsOut === undefined) e.putsOut = Math.random() < 0.33;
+        if (!e.putsOut) { e.doneTorch = true; return; }
+        e.doneTorch = true;
+        tc.life = 0;
+        S.effects.push({ kind: 'comic', x: tc.x, y: tc.y - 140, t: 0, text: 'APAGOU!', color: '#B9C6FF' });
+        Sound.play('leak');
+        if (!S.seenBatTorch) { S.seenBatTorch = true; infoCard('Morcegos', 'Alguns morcegos apagam as tochas quando passam voando perto delas. Toque na tocha apagada para reacender (' + MAP.night.relight + ' moedas).'); }
+      }
+    }
+  }
+  let nightCv = null;
+  function drawNight() {
+    const W = cv.width, H = cv.height;
+    if (!nightCv) nightCv = document.createElement('canvas');
+    if (nightCv.width !== W || nightCv.height !== H) { nightCv.width = W; nightCv.height = H; }
+    const n = nightCv.getContext('2d');
+    n.setTransform(1, 0, 0, 1, 0, 0); n.globalCompositeOperation = 'source-over'; n.clearRect(0, 0, W, H);
+    n.fillStyle = 'rgba(8, 14, 40, 0.82)'; n.fillRect(0, 0, W, H);
+    n.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offX, dpr * offY);
+    n.globalCompositeOperation = 'destination-out';
+    const hole = (x, y, r, a) => {
+      const g = n.createRadialGradient(x, y, r * 0.3, x, y, r);
+      g.addColorStop(0, 'rgba(0,0,0,' + a + ')'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      n.fillStyle = g; n.beginPath(); n.ellipse(x, y, r, r / 1.25, 0, 0, Math.PI * 2); n.fill();
+    };
+    for (const tc of S.torches) { const r = torchR(tc); if (r) hole(tc.x, tc.y, r * (1 + 0.03 * Math.sin(S.time * 9 + tc.x)), 1); }
+    // lanterninhas nas torres e no portão, só para enxergar a própria defesa (não iluminam inimigos)
+    for (const t of S.towers) if (t) hole(t.x, t.y - 60, 95, 0.55);
+    // torre selecionada: clareia a área de alcance para dar para ver o círculo no escuro
+    if (S.selected >= 0 && S.towers[S.selected]) { const t = S.towers[S.selected]; hole(t.x, t.y, rangeOf(t) * (upPending === S.selected ? 1.25 : 1.05), 0.6); }
+    for (let r = 0; r < ROUTES.length; r++) { const g = gateAt(r); hole(g.x, g.y, 150, 0.5); }
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(nightCv, 0, 0); ctx.restore();
+    // brilho quente das tochas, as tochas e os olhos de quem está no escuro
+    const TI = IMG.tocha;
+    for (const tc of S.torches) {
+      const r = torchR(tc);
+      if (r) {
+        const g = ctx.createRadialGradient(tc.x, tc.y - 60, 10, tc.x, tc.y - 60, r * 0.7);
+        g.addColorStop(0, 'rgba(255, 170, 70, 0.22)'); g.addColorStop(1, 'rgba(255, 140, 40, 0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(tc.x, tc.y - 60, r * 0.7, 0, Math.PI * 2); ctx.fill();
+      }
+      if (ready(TI)) {
+        const th = 120, tw = th * TI.naturalWidth / TI.naturalHeight;
+        ctx.save(); ctx.globalAlpha = r ? 1 : 0.5;
+        ctx.drawImage(TI, tc.x - tw / 2, tc.y - th + 8, tw, th);
+        ctx.restore();
+      }
+      const N = MAP.night;
+      if (tc.life < N.life * 0.75) {
+        // moedinha pedindo para reacender
+        const by = tc.y - 128 - (reduceMotion ? 0 : Math.sin(S.time * 5) * 4);
+        ctx.fillStyle = '#FFD95A'; ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(tc.x, by, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.font = '22px "Lilita One", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#2B1E14'; ctx.fillText(String(N.relight), tc.x, by + 1); ctx.textBaseline = 'alphabetic';
+      }
+    }
+    for (const e of S.enemies) {
+      if (e.dead || e.d < 0 || litAt(e.x, e.y)) continue;
+      const blink = Math.sin(S.time * 3 + e.phase * 7) > 0.92;
+      if (blink) continue;
+      const ey = e.y - e.alt - e.T.h * 0.62;
+      ctx.fillStyle = '#FFE15A';
+      for (const dx of [-9, 9]) { ctx.beginPath(); ctx.ellipse(e.x + dx + e.face * 6, ey, 5, 4, 0, 0, Math.PI * 2); ctx.fill(); }
+    }
+  }
+  // botão da tocha
+  const btnTorch = $('abTorch');
+  btnTorch.addEventListener('click', () => {
+    if (S.over || inMenu || !MAP.night) return;
+    Sound.play('click');
+    if (S.torchStock <= 0) { toast('Sem tochas agora. Você ganha mais uma a cada onda.'); return; }
+    closeMenu(); closeTowerMenu();
+    setAiming(aiming === 'torch' ? null : 'torch');
+  });
+  // toque numa tocha: reacende (se já estiver fraca ou apagada)
+  function tapTorch(wx, wy) {
+    if (!MAP.night) return false;
+    const N = MAP.night;
+    const tc = S.torches.find(o => Math.abs(wx - o.x) < 45 && wy < o.y + 25 && wy > o.y - 150);
+    if (!tc) return false;
+    if (tc.life >= N.life * 0.75) { toast('Esta tocha ainda está forte.'); return true; }
+    if (S.coins < N.relight) { toast('Reacender custa ' + N.relight + ' moedas.'); return true; }
+    S.coins -= N.relight; tc.life = N.life;
+    S.effects.push({ kind: 'float', x: tc.x, y: tc.y - 150, t: 0, text: '-' + N.relight, color: '#FFD95A' });
+    Sound.play('build');
+    return true;
+  }
+
+  // ---------- Duelo com o chefão (fase 5 de cada região) ----------
+  // a cada quarto de vida perdido, o chefão entra em fúria e faz algo novo
+  function bossDuel(e) {
+    const k = e.hp / e.maxHp; e.fury = e.fury || 0;
+    for (const [n, lim] of [[1, 0.75], [2, 0.5], [3, 0.25]]) if (e.fury < n && k <= lim) { e.fury = n; bossFury(e, n); }
+  }
+  function bossFury(e, n) {
+    const R = rosterOf(MAP);
+    S.coins += 60;
+    S.effects.push({ kind: 'float', ...viewTop(), t: 0, text: '+60 moedas', color: '#FFD95A', big: true });
+    S.shake = Math.max(S.shake, 14); Sound.play('horn'); buzz([80, 40, 80]);
+    if (n === 1) {
+      for (let k = 0; k < 4; k++) summonAt(R.basic, e.route, e.d - 50 - k * 35, 1.2);
+      for (let k = 0; k < 2; k++) summonAt(R.fast, e.route, e.d - 200 - k * 40, 1.2);
+      S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 30, t: 0, text: e.T.worm ? 'DESERTO, ATAQUE!' : 'FLORESTA, ATAQUE!', color: '#9BE07A' });
+      announce('FÚRIA!', 'O ' + e.T.name + ' chamou reforços', 'fury');
+    } else if (n === 2) {
+      const near = S.towers.filter(t => t && t.key !== 'quartel' && Math.hypot(t.x - e.x, t.y - e.y) <= 420);
+      for (const t of near) { t.rooted = 6; t.rootKind = e.T.worm ? 'sand' : 'roots'; S.effects.push({ kind: 'dust', x: t.x, y: t.y, t: 0 }); }
+      for (let k = 0; k < 2; k++) summonAt(R.armor, e.route, e.d - 60 - k * 60, 1);
+      S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 30, t: 0, text: e.T.worm ? 'TREMOR!' : 'RAÍZES!', color: '#C9A26B' });
+      announce('FÚRIA!', near.length ? (e.T.worm ? 'O tremor travou ' : 'Raízes prenderam ') + near.length + (near.length === 1 ? ' torre' : ' torres') : ENEMIES[R.armor].name + ' vem junto', 'fury');
+    } else {
+      e.enraged = true;
+      for (let k = 0; k < 3; k++) summonAt(R.fast, e.route, e.d - 60 - k * 40, 1.3);
+      S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 30, t: 0, text: 'FÚRIA!', color: '#FF6A4A' });
+      announce('FÚRIA!', 'Agora ele está mais rápido', 'fury');
+    }
+  }
+  // raízes enroladas na torre presa
+  function drawRoots(t) {
+    const h = artH(t), w = artW(t);
+    if (t.rootKind === 'sand') {
+      // tremor do verme: areia subindo em volta da base
+      ctx.save();
+      for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2 + S.time * 2, r = w * 0.45; ctx.fillStyle = 'rgba(214, 178, 110, 0.85)'; ctx.beginPath(); ctx.ellipse(t.x + Math.cos(a) * r, t.y + Math.sin(a) * r * 0.35 - 6 - Math.abs(Math.sin(S.time * 8 + i)) * 14, 16, 12, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore(); return;
+    }
+    ctx.save(); ctx.lineCap = 'round';
+    for (let i = 0; i < 5; i++) {
+      const x0 = t.x + (i - 2) * w * 0.18, sw = Math.sin(S.time * 3 + i) * 6;
+      for (const [lw, col] of [[11, '#2B1E14'], [6, '#7A5530']]) {
+        ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
+        ctx.moveTo(x0, t.y + 6); ctx.quadraticCurveTo(x0 + 22 + sw, t.y - h * 0.25, x0 - 6, t.y - h * (0.35 + 0.08 * (i % 3)));
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  // barra de vida do chefão, no alto da tela
+  function updateBossBar() {
+    const bar = $('bossBar');
+    document.body.classList.toggle('duel', !!MAP.duel && !inMenu && !S.over);
+    if (!MAP.duel || inMenu || S.over) { bar.hidden = true; return; }
+    const T = ENEMIES[MAP.duel], e = S.enemies.find(o => o.T.duel);
+    const k = e ? Math.max(0, e.hp / e.maxHp) : (S.wave ? 0 : 1);
+    bar.hidden = false;
+    let extra = e && e.enraged ? ' · FÚRIA' : '';
+    if (T.worm) { const left = Math.max(0, T.worm.minTime - (e ? e.fight || 0 : 0)); extra += left > 0 ? ' · ⏳ ' + Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0') : ' · ⏳ avançando!'; }
+    $('bossName').textContent = T.name + extra;
+    $('bossFill').style.width = (k * 100).toFixed(1) + '%';
+    $('bossImg').src = files[T.img];
+  }
+
+  // ---------- Deserto: tempestade que atravessa o mapa e areia movediça (fase 3) ----------
+  const inSweep = x => MAP.sweep && S.sweepX !== null && Math.abs(x - S.sweepX) < MAP.sweep.width / 2;
+  function updateDesert(dt) {
+    if (!S.waveActive && !S.enemies.length) return; // só durante as ondas
+    const W_ = MAP.sweep, Q = MAP.quick;
+    if (W_) {
+      S.sweepClock += dt;
+      const t0 = W_.first + Math.floor(Math.max(0, S.sweepClock - W_.first) / W_.every) * W_.every, k = (S.sweepClock - t0) / W_.dur;
+      if (S.sweepClock >= W_.first && k >= 0 && k <= 1) {
+        if (S.sweepX === null) {
+          S.sweepDir = Math.random() < 0.5 ? 1 : -1;
+          announce('TEMPESTADE!', 'Torres dentro dela não atiram', 'small');
+        }
+        const span = WORLD_W + W_.width;
+        S.sweepX = S.sweepDir > 0 ? -W_.width / 2 + span * k : WORLD_W + W_.width / 2 - span * k;
+      } else S.sweepX = null;
+    }
+    if (Q) {
+      S.quickClock += dt;
+      for (const t of S.towers) if (t && t.sink > 0) {
+        t.sink = Math.max(0, t.sink - dt);
+        if (t.sink <= 0) {
+          // afundou de vez: a torre se perde
+          const i = S.towers.indexOf(t);
+          if (t.soldiers) releaseSoldiers(t);
+          S.effects.push({ kind: 'dust', x: t.x, y: t.y, t: 0 }); S.effects.push({ kind: 'float', x: t.x, y: t.y - 60, t: 0, text: 'Engolida!', color: '#FF8A5A' });
+          Sound.play('leak'); S.towers[i] = null; if (S.selected === i) closeTowerMenu();
+        }
+      }
+      // nunca junto com a tempestade
+      if (S.quickClock >= (S.quickNext || Q.first) && S.sweepX === null && !S.towers.some(t => t && t.sink > 0)) {
+        const opts = S.towers.filter(t => t && t.key !== 'quartel');
+        if (opts.length) {
+          const t = opts[Math.floor(Math.random() * opts.length)];
+          t.sink = Q.time; t.qtaps = 0;
+          S.effects.push({ kind: 'comic', x: t.x, y: t.y - artH(t) - 30, t: 0, text: 'AFUNDANDO!', color: '#FFB060' });
+          Sound.play('stomp'); buzz(60);
+          if (!S.seenQuick) { S.seenQuick = true; infoCard('Areia movediça', 'Uma torre está afundando! Toque nela ' + Q.taps + ' vezes rápido para puxá-la de volta, senão a areia engole a torre.'); }
+        }
+        S.quickNext = S.quickClock + Q.every;
+      }
+    }
+  }
+  function drawSweep() {
+    if (S.sweepX === null) return;
+    const W_ = MAP.sweep, x = S.sweepX, w = W_.width;
+    const g = ctx.createLinearGradient(x - w / 2 - 60, 0, x + w / 2 + 60, 0);
+    g.addColorStop(0, 'rgba(214, 170, 100, 0)'); g.addColorStop(0.2, 'rgba(214, 170, 100, 0.72)'); g.addColorStop(0.8, 'rgba(214, 170, 100, 0.72)'); g.addColorStop(1, 'rgba(214, 170, 100, 0)');
+    ctx.fillStyle = g; ctx.fillRect(x - w / 2 - 60, -300, w + 120, WORLD_H + 600);
+    ctx.save(); ctx.strokeStyle = 'rgba(255, 238, 200, 0.75)'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    const inner = w * 0.75; // as linhas de vento ficam só na parte cheia de areia
+    for (let i = 0; i < 26; i++) {
+      const yy = (i * 97) % WORLD_H, m = ((S.time * 380 * (S.sweepDir || 1) + i * 151) % inner + inner) % inner, off = m - inner / 2;
+      ctx.globalAlpha = Math.max(0, 1 - Math.abs(off) / (inner / 2)) * 0.95;
+      ctx.beginPath(); ctx.moveTo(x + off - 40, yy); ctx.lineTo(x + off + 40, yy + 8); ctx.stroke();
+    }
+    ctx.restore();
+    // X vermelho nas torres paradas
+    ctx.save(); ctx.strokeStyle = '#E04848'; ctx.lineWidth = 9; ctx.lineCap = 'round';
+    for (const t of S.towers) if (t && t.key !== 'quartel' && inSweep(t.x)) { const y = t.y - artH(t) - 18; ctx.beginPath(); ctx.moveTo(t.x - 16, y - 16); ctx.lineTo(t.x + 16, y + 16); ctx.moveTo(t.x + 16, y - 16); ctx.lineTo(t.x - 16, y + 16); ctx.stroke(); }
+    ctx.restore();
+  }
+  // ---------- Verme da Areia: mergulha e surge em outro ponto do caminho ----------
+  function wormTick(e, dt) {
+    const Wm = e.T.worm, L = routeLen(e.route);
+    e.fight = (e.fight || 0) + dt; // tempo de luta (para o mínimo de minutos)
+    if (!e.ws) e.ws = 'walk';
+    if (e.ws !== 'walk') {
+      e.wt -= dt; e.blocker = null;
+      if (e.ws === 'eat' && e.swallow) e.swallow.eaten = Math.min(1, 1 - e.wt / Wm.eatT);
+      if (e.ws === 'sink' && Math.random() < dt * 6) S.effects.push({ kind: 'dust', x: e.x + (Math.random() - 0.5) * 90, y: e.y, t: 0 });
+      if (e.wt > 0) return;
+      if (e.ws === 'sink') {
+        // sumiu de vez: fica só um montinho de areia se mexendo
+        e.ws = 'under'; e.burrow = true; e.wt = Wm.underT[0] + Math.random() * (Wm.underT[1] - Wm.underT[0]);
+        e.moundAt = { x: e.x, y: e.y, t: 0 };
+      } else if (e.ws === 'under') {
+        // só agora decide e mostra onde vai sair
+        e.ws = 'warn'; e.wt = Wm.warn; e.swallow = null;
+        const opts = S.towers.filter(t => t && t.key !== 'quartel' && !(t.sink > 0) && t.eaten === undefined);
+        if (!e.forcePath && (e.swallows || 0) < Wm.swallowMax && !e.lastSwallow && opts.length && Math.random() < Wm.swallowChance) {
+          const t = opts[Math.floor(Math.random() * opts.length)];
+          e.swallow = t; e.warnAt = { x: t.x, y: t.y };
+        } else {
+          e.warnD = wormTarget(e, L, e.forcePath === 'back'); const q = pointAt(e.warnD, e.route); e.warnAt = { x: q.x, y: q.y };
+        }
+        e.forcePath = null;
+      } else if (e.ws === 'warn') {
+        // sai da areia
+        e.ws = 'rise'; e.wt = Wm.riseT; e.burrow = false;
+        const at = e.warnAt; e.warnAt = null; e.moundAt = null;
+        if (e.swallow) { e.posOverride = { x: e.swallow.x, y: e.swallow.y + 8 }; e.swallow.eaten = 0; }
+        else {
+          e.posOverride = null; e.d = e.warnD; e.lastSwallow = false;
+          for (const t of S.towers) if (t && t.key !== 'quartel' && Math.hypot(t.x - at.x, t.y - at.y) < Wm.stunR) { t.rooted = Wm.stun; t.rootKind = 'sand'; }
+          // sempre que sai no caminho, traz monstros do deserto junto
+          const RR = rosterOf(MAP), n = 2 + Math.floor(Math.random() * 2);
+          for (let k2 = 0; k2 < n; k2++) summonAt(k2 === 0 ? RR.fast : RR.basic, e.route, e.d - 60 - k2 * 40, 1);
+        }
+        S.effects.push({ kind: 'boom', x: at.x, y: at.y, t: 0 }); for (const dx of [-60, -20, 20, 60]) S.effects.push({ kind: 'dust', x: at.x + dx, y: at.y, t: 0 });
+        S.shake = Math.max(S.shake, 16); Sound.play('stomp'); buzz([60, 30, 90]);
+      } else if (e.ws === 'rise') {
+        if (e.swallow) { e.ws = 'eat'; e.wt = Wm.eatT; Sound.play('stomp'); }
+        else { e.ws = 'walk'; e.wormClock = 0; }
+      } else if (e.ws === 'eat') {
+        // engoliu: a torre some e ele afunda de novo, saindo depois no caminho
+        const t = e.swallow, i = S.towers.indexOf(t);
+        if (i >= 0) { if (t.soldiers) releaseSoldiers(t); S.towers[i] = null; if (S.selected === i) closeTowerMenu(); }
+        S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 20, t: 0, text: 'NHAC!', color: '#FF8A5A' });
+        Sound.play('leak'); buzz([80, 40, 120]);
+        e.swallows = (e.swallows || 0) + 1; e.lastSwallow = true; e.swallow = null; e.forcePath = 'path';
+        if (!save.seenWormEat) { save.seenWormEat = true; persist(); infoCard('O Verme engoliu uma torre!', 'Quando o aviso vermelho aparece debaixo de uma torre, não tem como salvar: ele vai engoli-la. Ele engole no máximo 3 torres por luta. Guarde moedas para reconstruir!'); }
+        e.ws = 'sink'; e.wt = Wm.sinkT;
+      }
+      return;
+    }
+    const k = e.d / L, early = e.fight < Wm.minTime;
+    e.wormClock = (e.wormClock || 0) + dt;
+    e.nextDive = e.nextDive || Wm.every[0] + Math.random() * (Wm.every[1] - Wm.every[0]);
+    // antes do tempo mínimo ele nunca chega ao portão: se andar até perto do fim, mergulha na hora e volta
+    const forced = early && k >= Wm.guard;
+    const canDive = early || (e.lateDives || 0) < Wm.after;
+    if (forced || (canDive && k >= Wm.from && k <= Wm.to && e.wormClock >= e.nextDive)) {
+      if (!early) e.lateDives = (e.lateDives || 0) + 1;
+      e.dives = (e.dives || 0) + 1; e.ws = 'sink'; e.wt = Wm.sinkT; e.nextDive = null; e.blocker = null;
+      if (forced) e.forcePath = 'back';
+      S.effects.push({ kind: 'comic', x: e.x, y: e.y - e.T.h - 20, t: 0, text: 'MERGULHANDO!', color: '#E8C27A' });
+      Sound.play('stomp');
+      if (!S.seenWorm) { S.seenWorm = true; infoCard('Verme da Areia', 'Ele está se enterrando! Depois de sumir, a areia vai tremer no lugar onde ele vai sair, e lá ele trava as torres bem perto por alguns segundos. Às vezes ele sai debaixo de uma torre para engoli-la! A ampulheta na barra mostra quanto falta para ele começar a avançar até o portão.'); }
+    }
+  }
+  // ponto sorteado no caminho: na maioria das vezes volta, às vezes avança; nunca igual ao anterior
+  function wormTarget(e, L, mustBack) {
+    const Wm = e.T.worm, lo = Wm.from * L, hi = Wm.to * L;
+    let tgt = e.d, tries = 0;
+    do {
+      const goBack = mustBack || Math.random() < Wm.back;
+      tgt = goBack ? Math.max(lo, e.d - (0.08 + Math.random() * Wm.jump) * L) : Math.min(hi, e.d + (0.06 + Math.random() * Wm.jump * 0.6) * L);
+      if (mustBack) tgt = Math.min(tgt, lo + Math.random() * (0.55 * L - lo));
+      tries++;
+    } while (tries < 25 && (Math.abs(tgt - e.d) < 0.06 * L || (e.lastD !== undefined && Math.abs(tgt - e.lastD) < 0.06 * L)));
+    e.lastD = tgt;
+    return tgt;
+  }
+  // verme entrando, saindo ou comendo: só a parte acima da areia aparece, com o buraco em volta
+  function drawWormDig(e) {
+    const T = e.T, im = IMG[T.img], Wm = T.worm;
+    let k = 0; // 0 = todo para fora, 1 = todo enterrado
+    if (e.ws === 'sink') k = 1 - e.wt / Wm.sinkT;
+    else if (e.ws === 'rise') k = e.wt / Wm.riseT;
+    else if (e.ws === 'eat') k = 0.12 + 0.05 * Math.sin(S.time * 10);
+    k = Math.max(0, Math.min(1, k));
+    const ease = k * k * (3 - 2 * k), shake = Math.sin(S.time * 40) * 4 * (e.ws === 'eat' ? 0.5 : 1);
+    // buraco de areia
+    const g = ctx.createRadialGradient(e.x, e.y, 6, e.x, e.y, T.w * 0.75);
+    g.addColorStop(0, 'rgba(90, 55, 20, 0.85)'); g.addColorStop(0.6, 'rgba(160, 110, 55, 0.6)'); g.addColorStop(1, 'rgba(214, 170, 100, 0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(e.x, e.y, T.w * 0.75, T.w * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+    if (ready(im)) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(e.x - 600, e.y - 1500, 1200, 1500 + 6); ctx.clip();
+      ctx.translate(e.x + shake, e.y + T.h * 0.95 * ease);
+      ctx.scale(e.face, 1);
+      ctx.drawImage(im, -T.w / 2, -T.h, T.w, T.h);
+      if (e.flash > 0) { ctx.globalAlpha = 0.55; ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(im, -T.w / 2, -T.h, T.w, T.h); }
+      ctx.restore();
+    }
+    // borda de areia na frente e grãos espirrando (cavando)
+    ctx.fillStyle = '#D9B46E'; ctx.strokeStyle = 'rgba(90, 60, 25, 0.55)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(e.x, e.y + 4, T.w * 0.55, T.w * 0.14, 0, 0, Math.PI); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(232, 200, 140, 0.95)';
+    for (let i = 0; i < 10; i++) {
+      const ph = (S.time * 1.8 + i / 10) % 1, side = i % 2 ? 1 : -1, sx = e.x + side * (T.w * 0.25 + ph * T.w * 0.5);
+      ctx.beginPath(); ctx.arc(sx, e.y - Math.sin(ph * Math.PI) * 70, 7 * (1 - ph) + 2, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  function drawWormFx() {
+    for (const e of S.enemies) {
+      if (e.moundAt && e.ws === 'under') {
+        // montinho de areia mexendo onde ele entrou, sumindo devagar
+        e.moundAt.t += 1 / 60;
+        const m = e.moundAt, a = Math.max(0, 1 - m.t / 2.2);
+        ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#C9A15E';
+        for (let i = 0; i < 5; i++) { const ox = (i - 2) * 22, oy = Math.sin(S.time * 8 + i) * 4; ctx.beginPath(); ctx.ellipse(m.x + ox, m.y + oy, 24, 12, 0, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+      }
+      if (!e.burrow || !e.warnAt || e.ws !== 'warn') continue;
+      const { x, y } = e.warnAt, a = 0.5 + 0.5 * Math.sin(S.time * 14);
+      ctx.save();
+      ctx.fillStyle = 'rgba(120, 80, 30, ' + (0.25 + 0.2 * a) + ')'; ctx.beginPath(); ctx.ellipse(x, y, 110, 48, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 90, 60, ' + (0.5 + 0.4 * a) + ')'; ctx.lineWidth = 6; ctx.setLineDash([16, 12]);
+      const R = e.swallow ? 120 : e.T.worm.stunR;
+      ctx.beginPath(); ctx.ellipse(x, y, R, R / 1.25, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      for (let i = 0; i < 8; i++) { const ang = i / 8 * Math.PI * 2 + S.time * 3, r = 40 + 25 * Math.sin(S.time * 9 + i); ctx.fillStyle = 'rgba(214, 178, 110, 0.9)'; ctx.beginPath(); ctx.arc(x + Math.cos(ang) * r, y + Math.sin(ang) * r * 0.4 - Math.abs(Math.sin(S.time * 10 + i)) * 18, 9, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+    }
+  }
+
+
   // ---------- Atualização ----------
   function update(dt) {
     S.time += dt;
@@ -1342,8 +1933,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       // terreno: no lago congelado os inimigos que andam escorregam mais rápido
       const ice = MAP.ice;
       e.onIce = !!ice && !e.T.flying && !e.blocker && Math.pow((e.x - ice.x) / ice.rx, 2) + Math.pow((e.y - ice.y) / ice.ry, 2) < 1;
-      let v = e.T.speed * e.slowFactor * (e.onIce ? ice.speed : 1);
+      let v = e.T.speed * e.slowFactor * (e.onIce ? ice.speed : 1) * (e.enraged ? 1.7 : 1);
       if (e.emerge > 0) { e.emerge = Math.max(0, e.emerge - dt); v = 0; }
+      if (e.T.worm) { e.lane = 0; wormTick(e, dt); if (e.ws && e.ws !== 'walk') v = 0; }
       const b = e.blocker;
       if (b && (!b.alive || b.target !== e)) e.blocker = null;
       const foe = e.blocker;
@@ -1368,6 +1960,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       const len = Math.hypot(p.dx, p.dy) || 1;
       e.x = p.x + (-p.dy / len) * e.lane;
       e.y = p.y + (p.dx / len) * e.lane;
+      if (e.posOverride) { e.x = e.posOverride.x; e.y = e.posOverride.y; } // verme comendo uma torre
       if (engaged) e.face = foe.x >= e.x ? 1 : -1;
       else if (p.dx > 0.5) e.face = 1; else if (p.dx < -0.5) e.face = -1;
       const prevStep = Math.floor(e.phase / Math.PI);
@@ -1409,6 +2002,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
           } else e.frzCd = 1;
         }
       }
+      if (e.T.duel && !e.dead && e.d > 0) bossDuel(e);
+      if (MAP.night && e.T.flying && e.d > 0) batVsTorch(e);
       if (e.T.summon && e.d > 60 && !e.emerge) {
         e.sumCd = (e.sumCd === undefined ? 4 : e.sumCd) - dt;
         if (e.sumCd <= 0) {
@@ -1429,6 +2024,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       if (t.key === 'quartel') { updateSoldiers(t, dt); continue; }
       if (t.frozen > 0) { t.frozen = Math.max(0, t.frozen - dt); continue; } // congelada: não atira até quebrar o gelo ou derreter
       if (t.burn > 0) continue; // em chamas: não atira
+      if (t.rooted > 0) { t.rooted = Math.max(0, t.rooted - dt); continue; } // presa (raízes ou tremor)
+      if (t.sink > 0) continue; // afundando na areia movediça
+      if (t.eaten !== undefined) continue; // sendo engolida pelo verme
+      if (inSweep(t.x)) continue; // dentro da tempestade
       t.cd -= dt;
       if (t.cd <= 0) {
         const e = findTarget(t);
@@ -1437,6 +2036,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     }
     updateShots(dt);
     updateAbilities(dt);
+    if (MAP.sweep || MAP.quick) updateDesert(dt);
+    if (MAP.night && S.waveActive) for (const tc of S.torches) tc.life = Math.max(0, tc.life - dt);
     updateStorm(dt);
     updateVolcano(dt);
     if (!S.waveActive && S.autoIn > 0 && !S.over) { S.autoIn -= dt; if (S.autoIn <= 0) { S.autoIn = 0; startWave(true); } }
@@ -1446,22 +2047,23 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       e.dead = true;
       S.lives = Math.max(0, S.lives - e.T.damage);
       Sound.play('leak'); buzz(e.T.boss ? [80, 40, 120] : 60);
-      S.effects.push({ kind: 'float', x: 390, y: 1230, t: 0, text: '-' + e.T.damage, color: '#FF5A4A', big: true });
+      S.effects.push({ kind: 'float', ...gateAt(e.route), t: 0, text: '-' + e.T.damage, color: '#FF5A4A', big: true });
     }
     S.enemies = S.enemies.filter(e => !e.dead);
     if (S.lives <= 0 && !S.over) endGame(false);
 
     for (const f of S.effects) f.t += dt;
-    S.effects = S.effects.filter(f => f.t < 1.2);
+    const lifeOf = f => f.kind === 'float' ? (f.big ? 2.6 : 1.9) : f.kind === 'comic' ? 1.8 : 1.2;
+    S.effects = S.effects.filter(f => f.t < lifeOf(f));
 
     if (S.waveActive && !S.queue.length && !S.enemies.length && !S.over) {
       S.waveActive = false;
       const bonus = 25 + S.wave * 5;
       S.coins += bonus;
       { const ms = MS(); if (endless ? S.wave > ms.bestEndless : S.wave > ms.best) { if (endless) ms.bestEndless = S.wave; else ms.best = S.wave; persist(); } }
-      if (!endless && S.wave >= TOTAL_WAVES) endGame(true);
+      if (!endless && S.wave >= TW()) endGame(true);
       else {
-        toast('Onda ' + S.wave + ' concluída! +' + bonus + ' moedas'); Sound.play('wave');
+        announce('Onda concluída', '+' + bonus + ' moedas', 'small'); Sound.play('wave');
         if (!tutActive) S.autoIn = AUTO_WAVE;
         if (tutStep === 0 && tutActive && S.towers.some(Boolean)) {
           const lost = 20 - S.lives;
@@ -1478,7 +2080,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
   function endGame(win) {
     S.over = true; S.waveActive = false; closeMenu(); closeTowerMenu();
-    const reached = win ? TOTAL_WAVES : S.wave - 1;
+    const reached = win ? TW() : S.wave - 1;
     const isBest = reached > (S.startBest || 0);
     if (win) save.wins++;
     const ms = MS();
@@ -1507,6 +2109,48 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     updateHUD();
   }
 
+  // faixa que continua o mapa para cima: espelho do topo, desfocado (some a sensação de árvore duplicada),
+  // com a borda de cima do mapa original esmaecendo por cima para não aparecer emenda. Fica guardada até mudar o zoom.
+  let topCache = null;
+  function topStrip(MI, ext, fade) {
+    const key = MI.src + '|' + ext + '|' + fade;
+    if (topCache && topCache.key === key) return topCache.cv;
+    const k = MI.naturalWidth / WORLD_W, w = MI.naturalWidth, he = Math.max(2, Math.round(ext * k)), hf = Math.max(2, Math.round(fade * k));
+    const c = document.createElement('canvas'); c.width = w; c.height = he + hf;
+    const x = c.getContext('2d');
+    // desfoque barato que funciona em qualquer celular: reduz bastante e amplia de volta
+    const sm = document.createElement('canvas'); sm.width = Math.max(4, Math.round(w / 10)); sm.height = Math.max(2, Math.round((he + hf) / 10));
+    const sx = sm.getContext('2d');
+    sx.save(); sx.scale(1, -1); sx.drawImage(MI, 0, 0, w, Math.min(MI.naturalHeight, he + hf), 0, -sm.height, sm.width, sm.height); sx.restore();
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    x.drawImage(sm, 0, 0, w, he + hf);
+    // topo nítido do mapa por cima, aparecendo aos poucos
+    const t = document.createElement('canvas'); t.width = w; t.height = hf;
+    const tx = t.getContext('2d');
+    tx.drawImage(MI, 0, 0, w, hf, 0, 0, w, hf);
+    tx.globalCompositeOperation = 'destination-in';
+    const g = tx.createLinearGradient(0, 0, 0, hf); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+    tx.fillStyle = g; tx.fillRect(0, 0, w, hf);
+    x.drawImage(t, 0, he);
+    topCache = { key, cv: c };
+    return c;
+  }
+  // névoa suave no alto do mapa (atrás do placar): esconde a emenda e dá profundidade; a cor muda com o terreno
+  function drawTopFog(ext, fade) {
+    const c = MAP.id.startsWith('deserto') ? '238, 220, 178' : MAP.id.startsWith('vulcao') ? '125, 112, 106' : '236, 243, 246';
+    const g = ctx.createLinearGradient(0, -ext, 0, fade * 1.6);
+    g.addColorStop(0, 'rgba(' + c + ', 0.85)'); g.addColorStop(0.55, 'rgba(' + c + ', 0.45)'); g.addColorStop(1, 'rgba(' + c + ', 0)');
+    ctx.fillStyle = g; ctx.fillRect(0, -ext, WORLD_W, ext + fade * 1.6);
+    // nuvens de névoa passando devagar
+    const n = 7, r0 = WORLD_W / 4.2, drift = reduceMotion ? 0 : S.time * 9;
+    for (let i = 0; i < n; i++) {
+      const span = WORLD_W + r0 * 2, x = ((i * span / n + drift * (0.6 + (i % 3) * 0.25)) % span) - r0;
+      const y = -ext * (0.15 + 0.5 * ((i * 37) % 10) / 10) + fade * 0.3, r = r0 * (0.75 + ((i * 53) % 10) / 20);
+      const pg = ctx.createRadialGradient(x, y, r * 0.15, x, y, r);
+      pg.addColorStop(0, 'rgba(' + c + ', 0.55)'); pg.addColorStop(1, 'rgba(' + c + ', 0)');
+      ctx.fillStyle = pg; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
   // ---------- Desenho ----------
   function draw() {
     const W = cv.width, H = cv.height;
@@ -1517,12 +2161,20 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     const shy = S.shake && !reduceMotion ? (Math.random() - 0.5) * S.shake : 0;
     ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * (offX + shx * scale), dpr * (offY + shy * scale));
 
-    if (ready(IMG[MAP.img])) ctx.drawImage(IMG[MAP.img], 0, 0, WORLD_W, WORLD_H);
+    if (ready(IMG[MAP.img])) {
+      const MI = IMG[MAP.img];
+      ctx.drawImage(MI, 0, 0, WORLD_W, WORLD_H);
+      // acima do mapa (atrás do placar): a faixa do topo espelhada e desfocada, emendando suave com o mapa
+      const ext = Math.ceil(170 / scale), fade = Math.ceil(40 / scale);
+      const top = topStrip(MI, ext, fade);
+      if (top) ctx.drawImage(top, 0, -ext, WORLD_W, ext + fade);
+      drawTopFog(ext, fade);
+    }
 
     // terrenos vazios
     PADS.forEach(([px, py], i) => {
       if (S.towers[i]) return;
-      const PI_ = IMG['pad_' + MAP.id] || IMG.pad; // cada mapa tem a sua base de construção
+      const PI_ = IMG['pad_' + regionId(MAP)] || IMG.pad; // cada mapa tem a sua base de construção
       if (MAP.id === 'vulcao') {
         // brilho alaranjado pulsando sob as bases do Vulcão, para elas aparecerem no chão escuro
         const gl = 0.55 + 0.15 * Math.sin(S.time * 2.5 + i), g = ctx.createRadialGradient(px, py, 50, px, py, 118);
@@ -1569,10 +2221,17 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
         ctx.beginPath(); ctx.moveTo(t.rally.x, t.rally.y - 46); ctx.lineTo(t.rally.x + 28, t.rally.y - 38); ctx.lineTo(t.rally.x, t.rally.y - 28); ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.setLineDash([12, 9]); ctx.lineWidth = 3;
       }
-      if (t.level < MAX_LEVEL) {
-        const R2 = Math.round(t.T.range * LV.range[t.level]);
-        ctx.strokeStyle = 'rgba(255, 217, 90, 0.75)'; ctx.setLineDash([4, 10]);
-        ctx.beginPath(); ctx.ellipse(t.x, t.y, R2, R2 / 1.25, 0, 0, Math.PI * 2); ctx.stroke();
+      if (upPending === S.selected && t.level < MAX_LEVEL) {
+        // prévia da melhoria: alcance do próximo nível em dourado
+        const R2 = Math.round(t.T.range * LV.range[t.level] * (t.key !== 'quartel' && stormOn() ? MAP.storm.range : 1));
+        ctx.fillStyle = 'rgba(255, 217, 90, 0.16)'; ctx.strokeStyle = '#FFD95A'; ctx.lineWidth = 4; ctx.setLineDash([14, 10]);
+        ctx.beginPath(); ctx.ellipse(t.x, t.y, R2, R2 / 1.25, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.setLineDash([]);
+        const fz = Math.round(17 / scale); // tamanho fixo na tela, em qualquer zoom
+        ctx.font = fz + 'px "Lilita One", sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = fz * 0.28; ctx.strokeStyle = '#2B1E14'; ctx.fillStyle = '#FFD95A';
+        const low = toScreen(t.x, t.y)[1] > cv.clientHeight * 0.55; // torre embaixo: plaquinha no alto do círculo
+        const ly = low ? t.y - R2 / 1.25 + fz * 1.3 : t.y + R2 / 1.25 - fz * 0.5;
+        ctx.strokeText('alcance no nível ' + (t.level + 1), t.x, ly); ctx.fillText('alcance no nível ' + (t.level + 1), t.x, ly);
       }
       ctx.restore();
     }
@@ -1652,6 +2311,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
     // tiros
     for (const s of S.shots) drawShot(s);
+    if (MAP.night) drawNight();
+    if (MAP.sweep) drawSweep();
+    if (MAP.duel && ENEMIES[MAP.duel].worm) drawWormFx();
 
     // efeitos no ar
     for (const f of S.effects) {
@@ -1722,14 +2384,22 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
         const r = 8 + f.t * 60;
         for (let i = 0; i < 6; i++) { const ang = i * Math.PI / 3; ctx.beginPath(); ctx.moveTo(f.x + Math.cos(ang) * r * 0.4, f.y + Math.sin(ang) * r * 0.4); ctx.lineTo(f.x + Math.cos(ang) * r, f.y + Math.sin(ang) * r); ctx.stroke(); }
         ctx.restore();
+      } else if (f.kind === 'ghost') {
+        // fumacinha verde subindo da múmia que reviveu
+        if (f.t < 0) continue;
+        const k = Math.min(1, f.t / 1.1);
+        ctx.save(); ctx.globalAlpha = 0.6 * (1 - k); ctx.fillStyle = '#7FF0B8';
+        ctx.beginPath(); ctx.arc(f.x + Math.sin(f.t * 6) * 8, f.y - k * 80, 10 + k * 14, 0, Math.PI * 2); ctx.fill(); ctx.restore();
       } else if (f.kind === 'float' || f.kind === 'comic') {
-        const a = Math.max(0, 1 - f.t / 1.1);
+        const life = f.kind === 'float' ? (f.big ? 2.6 : 1.9) : 1.8;
+        const a = Math.min(1, Math.max(0, (life - f.t) / (life * 0.35))); // fica parado e legível, só some no fim
         ctx.save(); ctx.globalAlpha = a;
         const size = f.kind === 'comic' ? 34 : (f.big ? 40 : 28);
         ctx.font = size + 'px "Lilita One", sans-serif'; ctx.textAlign = 'center';
-        const y = f.y - f.t * (f.kind === 'comic' ? 20 : 55);
+        const y = f.y - Math.min(f.t, 0.8) * (f.kind === 'comic' ? 20 : 55);
         ctx.translate(f.x, y);
-        if (f.kind === 'comic') { const pop = Math.min(1, f.t / 0.12); ctx.scale(0.6 + 0.4 * pop, 0.6 + 0.4 * pop); ctx.rotate(-0.12); }
+        if (f.kind === 'comic') { const pop = Math.min(1, f.t / 0.12); ctx.scale(0.6 + 0.4 * pop, 0.6 + 0.4 * pop); ctx.rotate(f.italic ? -0.05 : -0.12); }
+        if (f.italic) ctx.font = 'italic ' + size + 'px "Lilita One", sans-serif';
         ctx.lineWidth = 8; ctx.strokeStyle = '#2B1E14'; ctx.fillStyle = f.color;
         ctx.strokeText(f.text, 0, 0); ctx.fillText(f.text, 0, 0);
         ctx.restore();
@@ -1757,15 +2427,52 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     const grow = Math.min(1, t.built / 0.25);
     const ease = 1 - Math.pow(1 - grow, 3);
     const kick = t.recoil * 0.04;
-    ctx.save();
+    let sinkK = 0;
+    if (t.eaten !== undefined) { ctx.save(); ctx.beginPath(); ctx.rect(t.x - 600, t.y - 1500, 1200, 1500 + 4); ctx.clip(); ctx.translate(Math.sin(S.time * 20) * 4, art.h * t.eaten); }
+    if (t.sink > 0) {
+      // afundando: um buraco de areia mole se abre e a torre vai descendo, balançando
+      const Q = MAP.quick, p = 1 - t.sink / Q.time, back = (t.qtaps || 0) / Q.taps;
+      sinkK = Math.max(0, (1 - Math.pow(1 - p, 2)) * 0.5 - back * 0.25); // desce até a metade; cada toque puxa um pouco
+      const w = art.w * 0.95;
+      ctx.save();
+      const g = ctx.createRadialGradient(t.x, t.y + 4, 4, t.x, t.y + 4, w * 0.75);
+      g.addColorStop(0, 'rgba(110, 70, 30, 0.85)'); g.addColorStop(0.55, 'rgba(170, 120, 60, 0.75)'); g.addColorStop(1, 'rgba(214, 170, 100, 0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(t.x, t.y + 4, w * 0.75, w * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      // areia girando para dentro do buraco
+      ctx.strokeStyle = 'rgba(245, 214, 150, 0.8)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      for (let r = 0; r < 3; r++) { const rr = w * (0.25 + r * 0.17), a0 = S.time * (3 - r * 0.6) + r * 2; ctx.beginPath(); ctx.ellipse(t.x, t.y + 4, rr, rr * 0.4, 0, a0, a0 + 1.6); ctx.stroke(); }
+      ctx.restore();
+      ctx.save();
+      ctx.beginPath(); ctx.rect(t.x - 600, t.y - 1500, 1200, 1500 + 6); ctx.clip(); // o que afundou fica escondido abaixo do chão
+      ctx.translate(Math.sin(S.time * 11) * 3 * (1 - back), art.h * sinkK);
+    } else ctx.save();
     ctx.translate(t.x, t.y);
+    if (t.sink > 0) ctx.rotate(Math.sin(S.time * 7) * 0.04);
     ctx.scale((0.6 + 0.4 * ease) * (1 + kick), (0.6 + 0.4 * ease) * (1 - kick));
     ctx.drawImage(im, -art.w / 2, -art.h, art.w, art.h);
     ctx.restore();
+    if (t.eaten !== undefined) ctx.restore();
+    if (t.sink > 0) {
+      // borda de areia na frente da torre, cobrindo a parte que afundou, e grãos espirrando
+      const w = art.w * 0.95;
+      ctx.save();
+      ctx.fillStyle = '#D9B46E'; ctx.strokeStyle = 'rgba(90, 60, 25, 0.55)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(t.x, t.y + 6, w * 0.55, w * 0.12, 0, 0, Math.PI); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(240, 210, 150, 0.9)';
+      for (let i = 0; i < 6; i++) { const ph = (S.time * 1.6 + i / 6) % 1, sx = t.x + (i - 2.5) * w * 0.17; ctx.beginPath(); ctx.arc(sx + Math.sin(i * 3) * 8, t.y - ph * 50, 5 * (1 - ph) + 2, 0, Math.PI * 2); ctx.fill(); }
+      // placa pedindo para tocar, com os toques feitos
+      const Q = MAP.quick, sc = 0.75 / scale, by = t.y - art.h * (1 - sinkK) - 34 * sc, pul = sc * (1 + 0.06 * Math.sin(S.time * 9)); // placa sempre do mesmo tamanho na tela
+      ctx.translate(t.x, by); ctx.scale(pul, pul);
+      ctx.fillStyle = '#F7ECD2'; ctx.strokeStyle = '#2B1E14'; ctx.lineWidth = 4;
+      // só as bolinhas dos toques (ficam verdes a cada toque)
+      for (let k = 0; k < Q.taps; k++) { ctx.fillStyle = k < (t.qtaps || 0) ? '#7FD36A' : '#F7ECD2'; ctx.beginPath(); ctx.arc((k - (Q.taps - 1) / 2) * 24, 14, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+      ctx.restore();
+    }
     // estrelas de nível na base
     for (let i = 0; i < t.level; i++) drawStar(t.x + (i - (t.level - 1) / 2) * 26, t.y + 14, 11);
     if (t.frozen > 0) drawFrozen(t);
     if (t.burn > 0) drawBurn(t);
+    if (t.rooted > 0) drawRoots(t);
   }
   function drawStar(cx, cy, r) {
     ctx.beginPath();
@@ -1779,6 +2486,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   }
 
   function drawEnemy(e) {
+    if (e.burrow) return; // debaixo da areia
+    if (e.T.worm && e.ws && e.ws !== 'walk') { drawWormDig(e); return; }
     const T = e.T, im = IMG[T.img];
     const s = Math.sin(e.phase), c = Math.cos(e.phase);
     let hop = 0, sxScale = 1, syScale = 1, tilt = 0, sway = 0;
@@ -1928,7 +2637,43 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   }
 
   // ---------- Toques no mapa ----------
-  cv.addEventListener('pointerdown', ev => {
+  {
+    const pts = new Map(); let moved = 0, pinch0 = 0, last = null, panned = false;
+    const mid = () => { const a = [...pts.values()]; return [(a[0].x + a[1].x) / 2, (a[0].y + a[1].y) / 2, Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y)]; };
+    cv.addEventListener('pointerdown', ev => {
+      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (pts.size === 1) { moved = 0; panned = false; last = { x: ev.clientX, y: ev.clientY }; }
+      if (pts.size === 2) { pinch0 = mid()[2]; moved = 99; }
+    });
+    cv.addEventListener('pointermove', ev => {
+      if (!pts.has(ev.pointerId)) return;
+      const r = cv.getBoundingClientRect();
+      if (pts.size === 1) {
+        const dx = ev.clientX - last.x, dy = ev.clientY - last.y; last = { x: ev.clientX, y: ev.clientY };
+        moved += Math.abs(dx) + Math.abs(dy);
+        if (moved > 10) {
+          if (!panned) { panned = true; closeMenu(); closeTowerMenu(); try { cv.setPointerCapture(ev.pointerId); } catch (e) {} }
+          offX += dx; offY += dy; bcamClamp();
+        }
+      }
+      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (pts.size === 2) {
+        const [mx, my, d] = mid();
+        if (!panned) { panned = true; closeMenu(); closeTowerMenu(); }
+        if (pinch0 > 0) bcamZoomAt(d / pinch0, mx - r.left, my - r.top); pinch0 = d;
+      }
+    });
+    const up = ev => {
+      if (!pts.has(ev.pointerId)) return;
+      const single = pts.size === 1;
+      pts.delete(ev.pointerId);
+      if (pts.size === 1) last = { ...[...pts.values()][0] };
+      if (single && moved <= 10 && ev.type === 'pointerup') mapTap(ev);
+    };
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    cv.addEventListener('wheel', ev => { ev.preventDefault(); const r = cv.getBoundingClientRect(); closeMenu(); closeTowerMenu(); bcamZoomAt(ev.deltaY < 0 ? 1.12 : 1 / 1.12, ev.clientX - r.left, ev.clientY - r.top); }, { passive: false });
+  }
+  function mapTap(ev) {
     if (S.over) return;
     const r = cv.getBoundingClientRect();
     const wx = (ev.clientX - r.left - offX) / scale, wy = (ev.clientY - r.top - offY) / scale;
@@ -1945,10 +2690,19 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       } else toast('Escolha um ponto do caminho dentro do círculo de alcance.');
       return;
     }
+    if (tapTorch(wx, wy)) return;
     // torre construída?
     for (let i = 0; i < PADS.length; i++) {
       const t = S.towers[i];
-      if (t && Math.abs(wx - t.x) < Math.min(artW(t), t.T.w * 1.2) * 0.45 && wy < t.y + 22 && wy > t.y - artH(t) - 50) {
+      if (t && Math.abs(wx - t.x) < Math.min(artW(t), t.T.w * 1.2) * 0.45 && wy < t.y + 40 && wy > t.y - artH(t) - 50) {
+        if (t.sink > 0) {
+          // areia movediça: cada toque puxa a torre; no último ela volta ao normal
+          t.qtaps = (t.qtaps || 0) + 1;
+          S.effects.push({ kind: 'dust', x: t.x + (Math.random() - 0.5) * 40, y: t.y, t: 0 });
+          Sound.play('build');
+          if (t.qtaps >= MAP.quick.taps) { t.sink = 0; t.qtaps = 0; S.effects.push({ kind: 'float', x: t.x, y: t.y - artH(t) - 20, t: 0, text: 'Salva!', color: '#9BE07A' }); }
+          return;
+        }
         if (t.frozen > 0) {
           // picareta: cada toque racha o gelo; no terceiro ele quebra e a torre volta a atirar
           t.picks = (t.picks || 0) + 1; t.chip = 0.25;
@@ -1975,7 +2729,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       if (!S.towers[i] && Math.hypot((wx - px) / 1.3, wy - py) < 70) { if (menuPad === i) closeMenu(); else openMenu(i); return; }
     }
     closeMenu(); closeTowerMenu();
-  });
+  }
 
   // ---------- Botões ----------
   btnCall.addEventListener('click', startWave);
@@ -2009,7 +2763,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   }
   $('tipOk').addEventListener('click', () => {
     Sound.play('click'); elTip.hidden = true; tutPaused = false;
-    if (tutStep === 3) { save.tut = true; persist(); setTut(-1); toast('Pronto! Agora é com você. Boa defesa!', 3); }
+    if (tutStep === 3) { save.tut = true; persist(); setTut(-1); announce('Boa defesa!', 'Agora é com você', 'small'); }
   });
   $('tipSkip').addEventListener('click', () => { Sound.play('click'); save.tut = true; persist(); setTut(-1); }); 
 
@@ -2017,6 +2771,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     closeMenu(); closeTowerMenu();
     endless = !!isEndless;
     if (mapIndex !== undefined) loadMap(mapIndex);
+    camReset();
     $('camp').hidden = true;
     S = newState(); S.startBest = endless ? MS().bestEndless : MS().best; shownCoins = -1;
     btnCall.dataset.label = ''; elPreview.dataset.n = ''; setAiming(null);
@@ -2026,8 +2781,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     Sound.duck(false);
     updateHUD();
     if (!save.tut && MAP === MAPS[0]) { tutActive = true; setTut(1); }
-    else if (MAP.intro && !save.seenMaps[MAP.id]) { setTut(-1); save.seenMaps[MAP.id] = true; persist(); infoCard(MAP.name, MAP.intro); }
-    else { setTut(-1); toast(endless ? 'Modo infinito: aguente o máximo de ondas que conseguir!' : 'Construa suas torres e chame a primeira onda', 3.5); }
+    else if (MAP.intro && (MAP.night || !save.seenMaps[MAP.id])) { /* a noite explica as regras em toda partida */ setTut(-1); save.seenMaps[MAP.id] = true; persist(); infoCard(MAP.name, MAP.intro); }
+    else { setTut(-1); if (endless) teach('endless', 'Modo infinito: aguente o máximo de ondas que conseguir!', 3.5); else teach('start', 'Construa suas torres e chame a primeira onda', 3.5); }
   }
   function showMenu() {
     closeMenu(); closeTowerMenu();
@@ -2035,7 +2790,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     S = newState();
     $('endOverlay').hidden = true; $('pauseOverlay').hidden = true; $('start').hidden = false; $('camp').hidden = true;
     document.querySelector('.hud-top').hidden = true; document.querySelector('.hud-bottom').hidden = true;
-    setTut(-1); setAiming(null); elAbil.hidden = true;
+    setTut(-1); setAiming(null); elAbil.hidden = true; $('abTorch').hidden = true; $('bossBar').hidden = true;
     $('starsTotal').textContent = totalStars() + '/' + MAPS.length * 3;
     $('mapsWon').textContent = MAPS.filter(m => mapSave(m.id).stars > 0).length + '/' + MAPS.length;
     Sound.duck(false);
@@ -2047,68 +2802,220 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   $('toMenu').addEventListener('click', () => { Sound.play('click'); showCamp(endless ? 'inf' : 'camp'); });
   $('toMenu2').addEventListener('click', () => { Sound.play('click'); showCamp(endless ? 'inf' : 'camp'); });
 
-  // ---------- Campanha: escolher a fase ----------
+  // ---------- Campanha: mapa do mundo (uma ilha só) ----------
   const totalStars = () => MAPS.reduce((a, m) => a + (mapSave(m.id).stars || 0), 0);
-  const STAGE_POS = [[27, 80], [70, 57], [27, 35], [70, 13]]; // posição de cada fase na tela, em %
+  const SEG_W = 768, SEG_H = 1376;
+  // regiões da ilha: onde fica o nome e onde ficam as bandeirinhas das fases (coordenadas da imagem da ilha)
+  // cada região terá 5 fases; a 5ª é o duelo com o chefão. Fases sem mapa ainda aparecem como "em breve".
+  const REGIONS = {
+    floresta: { name: 'Floresta', at: [440, 1150], view: [430, 1110], phases: [
+      { map: 'floresta', at: [420, 1268] }, { map: 'floresta2', at: [300, 1180] },
+      { map: 'floresta3', at: [455, 1125] }, { map: 'floresta4', at: [530, 1030] },
+      { map: 'floresta5', at: [440, 950], boss: true }] },
+    deserto: { name: 'Deserto', at: [300, 930], view: [270, 900], phases: [{ map: 'deserto', at: [372, 972] }, { map: 'deserto2', at: [255, 965] }, { map: 'deserto3', at: [145, 925] }, { map: 'deserto4', at: [185, 845] }, { map: 'deserto5', at: [320, 880], boss: true }] },
+    gelo: { name: 'Gelo', at: [550, 780], view: [560, 760], phases: [{ map: 'gelo', at: [560, 800] }] },
+    vulcao: { name: 'Vulcão', at: [420, 380], view: [430, 380], phases: [{ map: 'vulcao', at: [430, 410] }] },
+  };
+  const REGION_IDS = Object.keys(REGIONS);
+  const mapIdx = id => MAPS.findIndex(m => m.id === id);
+  const regionOf = i => REGION_IDS.find(r => REGIONS[r].phases.some(p => p.map === MAPS[i].id));
+  const phaseNo = i => { const r = REGIONS[regionOf(i)]; return r ? r.phases.findIndex(p => p.map === MAPS[i].id) + 1 : 1; };
+  // regiões que ainda vão ganhar fases
+  const FUTURE = [{ name: 'Pântano', at: [225, 650] }, { name: 'Cemitério', at: [520, 560] }, { name: 'Costa Pirata', at: [220, 465] }, { name: 'Castelo nas Nuvens', at: [384, 190] }];
+  const cam = { s: 1, x: 0, y: 0, base: 1 };
+  let camBuilt = false, camInit = false, camAnim = 0, campRegion = null;
   const STAR = on => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="' + (on ? '#FFC93C' : '#CDBB98') + '" stroke="#2B1E14" stroke-width="2" stroke-linejoin="round"/></svg>';
   const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" fill="#FFC93C" stroke="#2B1E14" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#2B1E14" stroke-width="2.5"/><circle cx="12" cy="15" r="1.6" fill="#2B1E14"/></svg>';
+  const SKULL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C7 3 4 6.3 4 10.5c0 2.6 1.3 4.4 3 5.4V19h10v-3.1c1.7-1 3-2.8 3-5.4C20 6.3 17 3 12 3z" fill="#F4E9CF" stroke="#2B1E14" stroke-width="2"/><circle cx="9" cy="11" r="2.1" fill="#2B1E14"/><circle cx="15" cy="11" r="2.1" fill="#2B1E14"/><path d="M10 19v-2M12 19v-2M14 19v-2" stroke="#2B1E14" stroke-width="1.6"/></svg>';
   const LOCKED_BG = { gelo: 'linear-gradient(#cfe4f2,#8fb6d2)', vulcao: 'linear-gradient(#7a4a3a,#3a2622)' };
   let campSel = -1, campMode = 'camp';
   // no modo infinito, um mapa só libera depois de vencido na campanha
   const stageOk = i => campMode === 'inf' ? mapPlayable(i) && (TEST_UNLOCK_ALL || mapSave(MAPS[i].id).stars > 0) : mapPlayable(i);
+
   function showCamp(mode) {
-    if (mode && mode !== campMode) { campMode = mode; campSel = -1; }
-    const inf = campMode === 'inf';
-    $('campTitle').textContent = inf ? 'Modo infinito' : 'Campanha';
-    $('campTotal').classList.toggle('off', inf);
-    $('campHint').textContent = inf ? 'Escolha um mapa e aguente o máximo de ondas' : 'Toque numa fase para ver o desafio e jogar';
+    if (mode && mode !== campMode) { campMode = mode; campSel = -1; campRegion = null; }
+    const recenter = !!mode || !camInit;
     closeMenu(); closeTowerMenu();
     inMenu = true; paused = false;
     S = newState();
     $('endOverlay').hidden = true; $('pauseOverlay').hidden = true; $('start').hidden = true; $('camp').hidden = false;
     document.querySelector('.hud-top').hidden = true; document.querySelector('.hud-bottom').hidden = true;
-    setTut(-1); setAiming(null); elAbil.hidden = true;
+    setTut(-1); setAiming(null); elAbil.hidden = true; $('abTorch').hidden = true; $('bossBar').hidden = true;
     Sound.duck(false);
     $('campStars').textContent = totalStars() + '/' + MAPS.length * 3;
+    if (!camBuilt) {
+      camBuilt = true;
+      $('campSegs').innerHTML = '<img id="campImg" alt="" src="assets/mundo.jpg" width="' + SEG_W + '" height="' + SEG_H + '">';
+      $('campWorld').style.width = SEG_W + 'px'; $('campWorld').style.height = SEG_H + 'px';
+    }
+    renderCamp();
+    camBase();
+    if (recenter) {
+      camInit = true; cam.s = cam.base;
+      const next = MAPS.findIndex((m, i) => mapPlayable(i) && !mapSave(m.id).stars);
+      const [sx, sy] = REGIONS[regionOf(Math.max(0, next)) || 'floresta'].at, vw = $('campView').clientWidth, vh = $('campView').clientHeight;
+      cam.x = vw / 2 - sx * cam.s; cam.y = vh * 0.55 - sy * cam.s;
+    }
+    camClamp(); camApply();
+    if (campRegion) camFocusAt(REGIONS[campRegion].view, 2, true);
+    $('dragHint').hidden = true;
+  }
+  // desenha os marcadores: na ilha, o nome de cada região; dentro de uma região, as bandeirinhas das fases
+  function renderCamp() {
+    const inf = campMode === 'inf';
     const next = inf ? -1 : MAPS.findIndex((m, i) => mapPlayable(i) && !mapSave(m.id).stars);
-    const trail = STAGE_POS.map(([x, y]) => x + ',' + y).join(' ');
-    $('campTrail').innerHTML = '<polyline points="' + trail + '" fill="none" stroke="#7A5634" stroke-width="5" stroke-dasharray="2 12" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
-    $('campStages').innerHTML = MAPS.map((m, i) => {
-      const ok = stageOk(i), st = mapSave(m.id).stars || 0, rec = mapSave(m.id).bestEndless || 0;
-      const bg = m.img ? 'background-image:url(' + files[m.img] + ')' : 'background:' + LOCKED_BG[m.id];
-      return '<button class="stage' + (ok ? '' : ' locked') + (i === campSel ? ' sel' : '') + '" data-i="' + i + '" type="button" style="left:' + STAGE_POS[i][0] + '%;top:' + STAGE_POS[i][1] + '%" aria-label="' + m.name + (!ok ? ', bloqueada' : inf ? (rec ? ', recorde onda ' + rec : ', ainda não jogado') : ', ' + st + ' de 3 estrelas') + '">'
-        + '<span class="med"><span class="core" style="' + bg + '"></span>' + (ok ? '' : '<span class="lock">' + LOCK + '</span>')
-        + (i === next ? '<svg class="flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2 V22" stroke="#2B1E14" stroke-width="4" stroke-linecap="round"/><path d="M5 2 V22" stroke="#8A5230" stroke-width="2" stroke-linecap="round"/><path d="M6 3 H20 L16 8 L20 13 H6 Z" fill="#E04848" stroke="#2B1E14" stroke-width="2" stroke-linejoin="round"/></svg>' : '') + '</span>'
-        + '<span class="rib">' + m.name + '</span>'
-        + (!ok ? '' : inf ? '<span class="rec">' + (rec ? 'Onda ' + rec : 'Novo') + '</span>' : '<span class="st">' + [0, 1, 2].map(k => STAR(k < st)).join('') + '</span>') + '</button>';
+    $('camp').classList.toggle('in-region', !!campRegion);
+    $('campBack').textContent = campRegion ? '‹ Ilha' : '‹ Menu';
+    $('campTitle').textContent = campRegion ? REGIONS[campRegion].name : inf ? 'Modo infinito' : 'Campanha';
+    $('campTotal').classList.toggle('off', inf);
+    $('campHint').textContent = campRegion ? 'Toque numa bandeira para ver a fase e jogar'
+      : inf ? 'Escolha uma região e aguente o máximo de ondas' : 'Toque numa região para ver as fases';
+    if (campRegion) {
+      const R = REGIONS[campRegion];
+      // trilha pontilhada ligando as bandeiras
+      let dots = '';
+      R.phases.forEach((p, k) => {
+        if (!k) return; const a = R.phases[k - 1].at, b = p.at, n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 9));
+        for (let j = 1; j < n; j++) dots += '<circle cx="' + (a[0] + (b[0] - a[0]) * j / n).toFixed(1) + '" cy="' + (a[1] + (b[1] - a[1]) * j / n).toFixed(1) + '" r="2.2"/>';
+      });
+      const trail = '<svg class="trail" width="' + SEG_W + '" height="' + SEG_H + '" viewBox="0 0 ' + SEG_W + ' ' + SEG_H + '" aria-hidden="true">' + dots + '</svg>';
+      $('campStages').innerHTML = trail + R.phases.map((p, k) => {
+        const i = p.map ? mapIdx(p.map) : -1, ok = i >= 0 && stageOk(i), m = i >= 0 ? MAPS[i] : null;
+        const st = m ? mapSave(m.id).stars || 0 : 0, rec = m ? mapSave(m.id).bestEndless || 0 : 0;
+        const cls = 'pf' + (p.boss ? ' boss' : '') + (!ok ? ' locked' : st ? ' won' : '') + (i >= 0 && i === next ? ' next' : '') + (i >= 0 && i === campSel ? ' sel' : '');
+        const label = 'Fase ' + (k + 1) + ' · ' + (m ? m.phase : p.soon);
+        const info = !ok ? '' : inf ? '<span class="rec">' + (rec ? 'Onda ' + rec : 'Novo') + '</span>' : '<span class="plq">' + [0, 1, 2].map(j => STAR(j < st)).join('') + '</span>';
+        const fimg = !ok ? 'flag_cinza' : st ? 'flag_azul' : 'flag_verm';
+        // centro do tecido de cada bandeira (medido na imagem), para o número ficar bem no meio
+        const FLAG_NUM = { flag_azul: 'left:52.7%;top:36.5%', flag_verm: 'left:58.6%;top:36%', flag_cinza: 'left:52%;top:34%' };
+        const bossImg = p.boss && m && m.duel ? files[ENEMIES[m.duel].img] : files.carvalho;
+        const icon = p.boss
+          ? '<span class="bossw"><img alt="" src="' + bossImg + '">' + (ok ? '' : '<span class="lk">' + LOCK + '</span>') + '</span>'
+          : '<span class="fgw"><img alt="" src="' + files[fimg] + '"><b class="num" style="' + FLAG_NUM[fimg] + '">' + (k + 1) + '</b>' + (ok ? '' : '<span class="lk">' + LOCK + '</span>') + '</span>';
+        return '<button class="' + cls + '" ' + (i >= 0 ? 'data-i="' + i + '"' : 'data-soon="' + k + '"') + ' type="button" style="left:' + p.at[0] + 'px;top:' + p.at[1] + 'px" aria-label="' + label + (ok ? '' : ', bloqueada') + '">'
+          + icon + info + '</button>';
+      }).join('');
+      if (campSel >= 0 && regionOf(campSel) === campRegion) openStage(campSel); else { campSel = -1; $('campSheet').hidden = true; }
+      return;
+    }
+    // ilha: nome escrito à mão de cada região + nuvem com cadeado nas regiões futuras
+    const fut = FUTURE.map(f => '<div class="future" style="left:' + f.at[0] + 'px;top:' + f.at[1] + 'px">'
+      + '<span class="cloud"></span><span class="fl">' + LOCK + '</span><span class="fn">' + f.name + '</span></div>').join('');
+    $('campStages').innerHTML = fut + REGION_IDS.map(rid => {
+      const R = REGIONS[rid], idx = R.phases.filter(p => p.map).map(p => mapIdx(p.map)).filter(i => i >= 0);
+      const ok = idx.some(i => stageOk(i)), st = idx.reduce((a, i) => a + (mapSave(MAPS[i].id).stars || 0), 0);
+      const rec = idx.reduce((a, i) => Math.max(a, mapSave(MAPS[i].id).bestEndless || 0), 0);
+      const isNext = idx.includes(next);
+      const info = !ok ? '<span class="fl">' + LOCK + '</span>' : inf ? '<span class="rec">' + (rec ? 'Onda ' + rec : 'Novo') + '</span>'
+        : '<span class="rs">' + STAR(st > 0) + '<b>' + st + '/' + idx.length * 3 + '</b></span>';
+      return '<button class="rgn' + (ok ? '' : ' locked') + (isNext ? ' next' : '') + '" data-r="' + rid + '" type="button" style="left:' + R.at[0] + 'px;top:' + R.at[1] + 'px" aria-label="' + R.name + ', ' + st + ' estrelas">'
+        + '<span class="rn">' + R.name + '</span>' + info + '</button>';
     }).join('');
-    if (campSel >= 0) openStage(campSel); else $('campSheet').hidden = true;
+    campSel = -1; $('campSheet').hidden = true;
+  }
+  function enterRegion(rid) { campRegion = rid; campSel = -1; renderCamp(); camFocusAt(REGIONS[rid].view, 2); }
+  function exitRegion() { campRegion = null; campSel = -1; renderCamp(); const s = cam.s; cam.s = cam.base; const v = $('campView'); cam.x = v.clientWidth / 2 - (v.clientWidth / 2 - cam.x) * cam.base / s; cam.y = v.clientHeight / 2 - (v.clientHeight / 2 - cam.y) * cam.base / s; camAnim++; camClamp(); camApply(); }
+  // a ilha sempre cobre a tela inteira (sem bordas pretas)
+  // o topo da ilha (o castelo no céu) começa logo abaixo do título, nunca escondido atrás dele
+  const camTop = () => { const h = $('campHint'); return h ? Math.round(h.getBoundingClientRect().bottom - $('campView').getBoundingClientRect().top) + 4 : 0; };
+  function camBase() { const v = $('campView'); cam.base = Math.max(v.clientWidth / SEG_W, (v.clientHeight - camTop()) / SEG_H); }
+  // a câmera voa até um ponto da ilha (ao entrar numa região), deixando espaço para o painel de baixo
+  function camFocusAt(pt, zoom, instant) {
+    const v = $('campView'), vw = v.clientWidth, vh = v.clientHeight, [sx, sy] = pt;
+    const s1 = cam.base * zoom, x1 = vw / 2 - sx * s1, y1 = vh * 0.45 - sy * s1;
+    const a = { s: cam.s, x: cam.x, y: cam.y }, id = ++camAnim;
+    if (reduceMotion || instant) { Object.assign(cam, { s: s1, x: x1, y: y1 }); camClamp(); camApply(); return; }
+    let t0 = 0;
+    const step = now => {
+      if (id !== camAnim) return;
+      if (!t0) t0 = now;
+      const k = Math.min(1, (now - t0) / 500), e = 1 - Math.pow(1 - k, 3);
+      cam.s = a.s + (s1 - a.s) * e; cam.x = a.x + (x1 - a.x) * e; cam.y = a.y + (y1 - a.y) * e;
+      camClamp(); camApply();
+      if (k < 1 && !$('camp').hidden) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  // ---------- arrastar e pinça (zoom) no mapa ----------
+  function camClamp() {
+    const vw = $('campView').clientWidth, vh = $('campView').clientHeight;
+    cam.s = Math.max(cam.base, Math.min(cam.base * 2.4, cam.s)); // a imagem tem 768 px: mais zoom que isso fica borrado
+    const w = SEG_W * cam.s, h = SEG_H * cam.s;
+    cam.x = w <= vw ? (vw - w) / 2 : Math.min(0, Math.max(vw - w, cam.x));
+    const top = camTop();
+    cam.y = h <= vh - top ? top + (vh - top - h) / 2 : Math.min(top, Math.max(vh - h, cam.y));
+  }
+  function camApply() { $('campWorld').style.transform = 'translate(' + cam.x + 'px,' + cam.y + 'px) scale(' + cam.s + ')'; }
+  function camZoomAt(f, cx, cy) {
+    camAnim++;
+    const s0 = cam.s; cam.s *= f; camClamp();
+    const k = cam.s / s0; cam.x = cx - (cx - cam.x) * k; cam.y = cy - (cy - cam.y) * k; camClamp(); camApply();
+  }
+  {
+    const view = $('campView'), pts = new Map();
+    let moved = 0, pinch0 = 0, last = null;
+    const mid = () => { const a = [...pts.values()]; return [(a[0].x + a[1].x) / 2, (a[0].y + a[1].y) / 2, Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y)]; };
+    view.addEventListener('pointerdown', ev => {
+      if (ev.target.closest('.zoom-btns')) { moved = 0; return; }
+      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (pts.size === 1) { moved = 0; last = { x: ev.clientX, y: ev.clientY }; }
+      if (pts.size === 2) { pinch0 = mid()[2]; moved = 99; }
+    });
+    view.addEventListener('pointermove', ev => {
+      if (!pts.has(ev.pointerId)) return;
+      const r = view.getBoundingClientRect();
+      if (pts.size === 1) {
+        const dx = ev.clientX - last.x, dy = ev.clientY - last.y; last = { x: ev.clientX, y: ev.clientY };
+        moved += Math.abs(dx) + Math.abs(dy);
+        if (moved > 8) { camAnim++; cam.x += dx; cam.y += dy; camClamp(); camApply(); if (!view.hasPointerCapture(ev.pointerId)) view.setPointerCapture(ev.pointerId); }
+      }
+      pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (pts.size === 2) { const [mx, my, d] = mid(); if (pinch0 > 0) camZoomAt(d / pinch0, mx - r.left, my - r.top); pinch0 = d; }
+    });
+    const up = ev => { pts.delete(ev.pointerId); if (pts.size === 1) last = { ...[...pts.values()][0] }; };
+    view.addEventListener('pointerup', up); view.addEventListener('pointercancel', up);
+    // um arrasto não conta como toque numa região
+    view.addEventListener('click', ev => { if (moved > 8) { ev.stopPropagation(); ev.preventDefault(); } }, true);
+    view.addEventListener('wheel', ev => { ev.preventDefault(); const r = view.getBoundingClientRect(); camZoomAt(ev.deltaY < 0 ? 1.12 : 1 / 1.12, ev.clientX - r.left, ev.clientY - r.top); }, { passive: false });
+    window.addEventListener('resize', () => { if (!$('camp').hidden) { const s = cam.s / cam.base; camBase(); cam.s = cam.base * s; camClamp(); camApply(); } });
   }
   function openStage(i) {
     campSel = i;
-    document.querySelectorAll('#campStages .stage').forEach(b => b.classList.toggle('sel', +b.dataset.i === i));
+    document.querySelectorAll('#campStages .pf').forEach(b => b.classList.toggle('sel', +b.dataset.i === i && b.dataset.i !== undefined));
     const m = MAPS[i], ms = mapSave(m.id), ok = stageOk(i), inf = campMode === 'inf';
-    $('csName').textContent = m.name;
+    $('csName').textContent = 'Fase ' + phaseNo(i) + ' · ' + (m.phase || m.name);
     $('csThumb').style.cssText = m.img ? 'background-image:url(' + files[m.img] + ')' : 'background:' + LOCKED_BG[m.id];
-    const art = n => (MAPS[n].id === 'floresta' ? 'a ' : 'o ') + MAPS[n].name;
     $('csDesc').textContent = ok ? (inf ? 'Ondas sem fim, cada vez mais fortes. ' : '') + m.desc
-      : !m.img ? 'Em breve: este mapa ainda está sendo desenhado.'
-      : inf ? 'Vença ' + art(i) + ' na campanha para liberar o modo infinito aqui.'
-      : 'Vença ' + art(i - 1) + ' na campanha para liberar ' + (inf ? 'este mapa.' : 'esta fase.');
+      : inf ? 'Vença esta fase na campanha para liberar o modo infinito aqui.'
+      : 'Vença a fase anterior para liberar esta.';
     $('csMeta').hidden = !ok; $('csBtns').hidden = !ok;
     $('csMetaLbl').textContent = inf ? 'Seu recorde:' : 'Suas estrelas:';
     $('csMetaVal').textContent = inf ? (ms.bestEndless ? 'onda ' + ms.bestEndless : 'ainda não jogou') : (ms.stars || 0) + ' de 3';
     $('campSheet').hidden = false;
   }
+  // fase que ainda não tem mapa: mostra o nome e avisa que está sendo preparada
+  function openSoon(k) {
+    campSel = -1;
+    const p = REGIONS[campRegion].phases[k];
+    document.querySelectorAll('#campStages .pf').forEach(b => b.classList.toggle('sel', b.dataset.soon === String(k)));
+    $('csName').textContent = 'Fase ' + (k + 1) + ' · ' + p.soon;
+    $('csThumb').style.cssText = 'background:linear-gradient(#5a7a3a,#2e4a22)';
+    $('csDesc').textContent = p.boss ? 'O grande duelo contra o chefão da região. Em breve!' : 'Em breve: esta fase ainda está sendo desenhada.';
+    $('csMeta').hidden = true; $('csBtns').hidden = true;
+    $('campSheet').hidden = false;
+  }
   $('campStages').addEventListener('click', ev => {
-    const b = ev.target.closest('.stage'); if (!b) return;
-    Sound.play('click'); openStage(+b.dataset.i);
+    const r = ev.target.closest('.rgn');
+    if (r) { Sound.play('click'); enterRegion(r.dataset.r); return; }
+    const b = ev.target.closest('.pf'); if (!b) return;
+    Sound.play('click');
+    if (b.dataset.soon !== undefined) openSoon(+b.dataset.soon); else openStage(+b.dataset.i);
   });
   $('camp').addEventListener('click', ev => {
-    if (ev.target === $('camp') || ev.target.id === 'campStages' || ev.target.id === 'campTrail') { campSel = -1; $('campSheet').hidden = true; document.querySelectorAll('#campStages .stage').forEach(b => b.classList.remove('sel')); }
+    if (ev.target === $('camp') || ev.target.id === 'campStages' || ev.target.id === 'campView' || ev.target.closest('#campWorld') && !ev.target.closest('.pf, .rgn')) { campSel = -1; $('campSheet').hidden = true; document.querySelectorAll('#campStages .pf').forEach(b => b.classList.remove('sel')); }
   });
   $('csPlay').addEventListener('click', () => { Sound.init(); Sound.play('click'); newGame(campMode === 'inf', campSel); });
-  $('campBack').addEventListener('click', () => { Sound.play('click'); campSel = -1; showMenu(); });
+  $('campBack').addEventListener('click', () => { Sound.play('click'); campSel = -1; if (campRegion) exitRegion(); else showMenu(); });
 
   function syncToggles() {
     for (const id of ['sfxToggle', 'sfxToggle2']) $(id).setAttribute('aria-pressed', String(save.sfx));
@@ -2140,13 +3047,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   }
 
   S = newState();
-  resize();
+  resize(); camReset();
   updateHUD();
   syncToggles();
   showMenu();
   requestAnimationFrame(frame);
 })();
 </script>
-
-</body>
-</html>
